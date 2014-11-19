@@ -51,6 +51,7 @@ import com.connectsdk.device.ConnectableDeviceListener;
 import com.connectsdk.device.ConnectableDeviceStore;
 import com.connectsdk.device.DefaultConnectableDeviceStore;
 import com.connectsdk.discovery.provider.CastDiscoveryProvider;
+import com.connectsdk.discovery.provider.FlintDiscoveryProvider;
 import com.connectsdk.discovery.provider.SSDPDiscoveryProvider;
 import com.connectsdk.discovery.provider.ZeroconfDiscoveryProvider;
 import com.connectsdk.service.AirPlayService;
@@ -59,6 +60,7 @@ import com.connectsdk.service.DIALService;
 import com.connectsdk.service.DLNAService;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.DeviceService.PairingType;
+import com.connectsdk.service.FlintService;
 import com.connectsdk.service.NetcastTVService;
 import com.connectsdk.service.RokuService;
 import com.connectsdk.service.WebOSTVService;
@@ -363,13 +365,14 @@ public class DiscoveryManager implements ConnectableDeviceListener, DiscoveryPro
 	 *   + AirPlayService
 	 */
 	public void registerDefaultDeviceTypes() {
-		registerDeviceService(WebOSTVService.class, SSDPDiscoveryProvider.class);
-		registerDeviceService(NetcastTVService.class, SSDPDiscoveryProvider.class);
-		registerDeviceService(DLNAService.class, SSDPDiscoveryProvider.class);
-		registerDeviceService(DIALService.class, SSDPDiscoveryProvider.class);
-		registerDeviceService(RokuService.class, SSDPDiscoveryProvider.class);
-		registerDeviceService(CastService.class, CastDiscoveryProvider.class);
-		registerDeviceService(AirPlayService.class, ZeroconfDiscoveryProvider.class);
+		//registerDeviceService(WebOSTVService.class, SSDPDiscoveryProvider.class);
+		//registerDeviceService(NetcastTVService.class, SSDPDiscoveryProvider.class);
+		//registerDeviceService(DLNAService.class, SSDPDiscoveryProvider.class);
+		//registerDeviceService(DIALService.class, SSDPDiscoveryProvider.class);
+		//registerDeviceService(RokuService.class, SSDPDiscoveryProvider.class);
+		//registerDeviceService(CastService.class, CastDiscoveryProvider.class);
+		registerDeviceService(FlintService.class, FlintDiscoveryProvider.class);
+		//registerDeviceService(AirPlayService.class, ZeroconfDiscoveryProvider.class);
 	}
 	
 	/**

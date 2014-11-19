@@ -129,6 +129,9 @@ public class DeviceService implements DeviceServiceReachabilityListener, Service
 			if (className.equalsIgnoreCase("Chromecast"))
 				return null;
 			
+			if (className.equalsIgnoreCase("MatchStick"))
+				return null;
+
 			newServiceClass = (Class<DeviceService>) Class.forName(DeviceService.class.getPackage().getName() + "." + className);
 			Constructor<DeviceService> constructor = newServiceClass.getConstructor(ServiceDescription.class, ServiceConfig.class);
 			

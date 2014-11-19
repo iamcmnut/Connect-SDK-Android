@@ -82,6 +82,10 @@ public class SSDP {
     		int pos = 0;
     		int eolPos = text.indexOf("\r\n");
     		
+            if (eolPos < 0) {
+                return;
+            }
+
     		// Get first line
     		type = text.substring(0, eolPos);
     		pos = eolPos + 2;

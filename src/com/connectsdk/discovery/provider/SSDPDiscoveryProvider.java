@@ -305,7 +305,10 @@ public class SSDPDiscoveryProvider implements DiscoveryProvider {
 //			}
 //		});
         // End Debugging stuff
-        
+        if (pd == null || pd.data ==null || pd.type == null) {
+            Log.e("Connect SDK", "pd, pd.data or pd.type is null. ignore!");
+            return;
+        }
         String serviceFilter = pd.data.get(pd.type.equals(SSDP.SL_NOTIFY) ? SSDP.NT : SSDP.ST);
 
     	if (serviceFilter == null || SSDP.SL_MSEARCH.equals(pd.type) || !isSearchingForFilter(serviceFilter))

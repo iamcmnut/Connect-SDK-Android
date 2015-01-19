@@ -21,7 +21,7 @@
 package com.connectsdk.service.flint;
 
 import com.connectsdk.core.Util;
-import com.connectsdk.service.sessions.CastWebAppSession;
+import com.connectsdk.service.sessions.FlintWebAppSession;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -29,11 +29,11 @@ import org.json.JSONObject;
 import tv.matchstick.flint.Flint;
 import tv.matchstick.flint.FlintDevice;
 
-public class CastServiceChannel implements Flint.MessageReceivedCallback{
+public class FlintServiceChannel implements Flint.MessageReceivedCallback{
 	String webAppId;
-	CastWebAppSession session;
+	FlintWebAppSession session;
 	
-	public CastServiceChannel(String webAppId, CastWebAppSession session) {
+	public FlintServiceChannel(String webAppId, FlintWebAppSession session) {
 		this.webAppId = webAppId;
 		this.session = session;
 	}

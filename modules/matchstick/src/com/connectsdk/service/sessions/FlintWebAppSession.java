@@ -23,13 +23,13 @@ package com.connectsdk.service.sessions;
 import android.util.Log;
 
 import com.connectsdk.core.Util;
-import com.connectsdk.service.CastService;
+import com.connectsdk.service.FlintService;
 import com.connectsdk.service.DeviceService;
 import com.connectsdk.service.capability.MediaPlayer;
 import com.connectsdk.service.capability.listeners.ResponseListener;
 import com.connectsdk.service.command.ServiceCommandError;
 import com.connectsdk.service.command.URLServiceSubscription;
-import com.connectsdk.service.flint.CastServiceChannel;
+import com.connectsdk.service.flint.FlintServiceChannel;
 
 import org.json.JSONObject;
 
@@ -40,15 +40,15 @@ import tv.matchstick.flint.Status;
 
 import java.io.IOException;
 
-public class CastWebAppSession extends WebAppSession {
-    private CastService service;
-    private CastServiceChannel castServiceChannel;
+public class FlintWebAppSession extends WebAppSession {
+    private FlintService service;
+    private FlintServiceChannel castServiceChannel;
     private ApplicationMetadata metadata;
 
-    public CastWebAppSession(LaunchSession launchSession, DeviceService service) {
+    public FlintWebAppSession(LaunchSession launchSession, DeviceService service) {
         super(launchSession, service);
 
-        this.service = (CastService) service;
+        this.service = (FlintService) service;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class CastWebAppSession extends WebAppSession {
             disconnectFromWebApp();
         }
 
-        castServiceChannel = new CastServiceChannel(launchSession.getAppId(),
+        castServiceChannel = new FlintServiceChannel(launchSession.getAppId(),
                 this);
 
         try {

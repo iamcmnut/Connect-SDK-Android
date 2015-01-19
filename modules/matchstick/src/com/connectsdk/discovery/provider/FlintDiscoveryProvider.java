@@ -31,8 +31,8 @@ import android.util.Log;
 import com.connectsdk.core.Util;
 import com.connectsdk.discovery.DiscoveryProvider;
 import com.connectsdk.discovery.DiscoveryProviderListener;
-import com.connectsdk.service.CastService;
-import com.connectsdk.service.config.CastServiceDescription;
+import com.connectsdk.service.FlintService;
+import com.connectsdk.service.config.FlintServiceDescription;
 import com.connectsdk.service.config.ServiceDescription;
 
 import org.json.JSONObject;
@@ -48,7 +48,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public class CastDiscoveryProvider implements DiscoveryProvider {
+public class FlintDiscoveryProvider implements DiscoveryProvider {
     private MediaRouter mMediaRouter;
     private MediaRouteSelector mMediaRouteSelector;
     protected MediaRouter.Callback mMediaRouterCallback;
@@ -63,7 +63,7 @@ public class CastDiscoveryProvider implements DiscoveryProvider {
     private Timer addCallbackTimer;
     private Timer removeCallbackTimer;
 
-    public CastDiscoveryProvider(Context context) {
+    public FlintDiscoveryProvider(Context context) {
 
         mMediaRouter = createMediaRouter(context);
         mMediaRouteSelector = new MediaRouteSelector.Builder()
@@ -132,7 +132,7 @@ public class CastDiscoveryProvider implements DiscoveryProvider {
                     public void run() {
                         for (DiscoveryProviderListener listener : serviceListeners) {
                             listener.onServiceRemoved(
-                                    CastDiscoveryProvider.this, service);
+                                    FlintDiscoveryProvider.this, service);
                         }
                     }
                 });
@@ -218,14 +218,14 @@ public class CastDiscoveryProvider implements DiscoveryProvider {
             boolean listUpdateFlag = false;
 
             if (isNew) {
-                foundService = new CastServiceDescription(CastService.ID, uuid,
+                foundService = new FlintServiceDescription(FlintService.ID, uuid,
                         castDevice.getIpAddress().getHostAddress(), castDevice);
                 foundService.setFriendlyName(castDevice.getFriendlyName());
                 foundService.setModelName(castDevice.getModelName());
                 foundService.setModelNumber(castDevice.getDeviceVersion());
                 foundService.setModelDescription(route.getDescription());
                 foundService.setPort(castDevice.getServicePort());
-                foundService.setServiceID(CastService.ID);
+                foundService.setServiceID(FlintService.ID);
 
                 listUpdateFlag = true;
             } else {
@@ -235,7 +235,7 @@ public class CastDiscoveryProvider implements DiscoveryProvider {
                     listUpdateFlag = true;
                 }
 
-                ((CastServiceDescription) foundService)
+                ((FlintServiceDescription) foundService)
                         .setCastDevice(castDevice);
             }
 
@@ -246,7 +246,7 @@ public class CastDiscoveryProvider implements DiscoveryProvider {
 
             if (listUpdateFlag) {
                 for (DiscoveryProviderListener listenter : serviceListeners) {
-                    listenter.onServiceAdded(CastDiscoveryProvider.this,
+                    listenter.onServiceAdded(FlintDiscoveryProvider.this,
                             foundService);
                 }
             }
@@ -272,7 +272,7 @@ public class CastDiscoveryProvider implements DiscoveryProvider {
                 foundService.setModelNumber(castDevice.getDeviceVersion());
                 foundService.setModelDescription(route.getDescription());
                 foundService.setPort(castDevice.getServicePort());
-                ((CastServiceDescription) foundService)
+                ((FlintServiceDescription) foundService)
                         .setCastDevice(castDevice);
 
                 if (!foundService.getFriendlyName().equals(
@@ -287,7 +287,7 @@ public class CastDiscoveryProvider implements DiscoveryProvider {
 
                 if (listUpdateFlag) {
                     for (DiscoveryProviderListener listenter : serviceListeners) {
-                        listenter.onServiceAdded(CastDiscoveryProvider.this,
+                        listenter.onServiceAdded(FlintDiscoveryProvider.this,
                                 foundService);
                     }
                 }

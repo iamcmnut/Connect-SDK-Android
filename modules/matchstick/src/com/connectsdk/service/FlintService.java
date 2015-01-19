@@ -59,15 +59,15 @@ import com.connectsdk.service.capability.listeners.ResponseListener;
 import com.connectsdk.service.command.ServiceCommandError;
 import com.connectsdk.service.command.ServiceSubscription;
 import com.connectsdk.service.command.URLServiceSubscription;
-import com.connectsdk.service.config.CastServiceDescription;
+import com.connectsdk.service.config.FlintServiceDescription;
 import com.connectsdk.service.config.ServiceConfig;
 import com.connectsdk.service.config.ServiceDescription;
-import com.connectsdk.service.sessions.CastWebAppSession;
+import com.connectsdk.service.sessions.FlintWebAppSession;
 import com.connectsdk.service.sessions.LaunchSession;
 import com.connectsdk.service.sessions.LaunchSession.LaunchSessionType;
 import com.connectsdk.service.sessions.WebAppSession;
 
-public class CastService extends DeviceService implements MediaPlayer,
+public class FlintService extends DeviceService implements MediaPlayer,
         MediaControl, VolumeControl, WebAppLauncher {
     interface ConnectionListener {
         void onConnected();
@@ -100,7 +100,7 @@ public class CastService extends DeviceService implements MediaPlayer,
     FlintDevice castDevice;
     RemoteMediaPlayer mMediaPlayer;
 
-    Map<String, CastWebAppSession> sessions;
+    Map<String, FlintWebAppSession> sessions;
     List<URLServiceSubscription<?>> subscriptions;
 
     float currentVolumeLevel;
@@ -110,13 +110,13 @@ public class CastService extends DeviceService implements MediaPlayer,
     // Queue of commands that should be sent once register is complete
     CopyOnWriteArraySet<ConnectionListener> commandQueue = new CopyOnWriteArraySet<ConnectionListener>();
 
-    public CastService(ServiceDescription serviceDescription,
+    public FlintService(ServiceDescription serviceDescription,
             ServiceConfig serviceConfig) {
         super(serviceDescription, serviceConfig);
         mCastClientListener = new CastListener();
         mConnectionCallbacks = new ConnectionCallbacks();
 
-        sessions = new HashMap<String, CastWebAppSession>();
+        sessions = new HashMap<String, FlintWebAppSession>();
         subscriptions = new ArrayList<URLServiceSubscription<?>>();
 
         mWaitingForReconnect = false;
@@ -147,8 +147,8 @@ public class CastService extends DeviceService implements MediaPlayer,
             return;
 
         if (castDevice == null) {
-            if (getServiceDescription() instanceof CastServiceDescription)
-                this.castDevice = ((CastServiceDescription) getServiceDescription())
+            if (getServiceDescription() instanceof FlintServiceDescription)
+                this.castDevice = ((FlintServiceDescription) getServiceDescription())
                         .getCastDevice();
         }
 
@@ -191,7 +191,7 @@ public class CastService extends DeviceService implements MediaPlayer,
             @Override
             public void run() {
                 if (getListener() != null) {
-                    getListener().onDisconnect(CastService.this, null);
+                    getListener().onDisconnect(FlintService.this, null);
                 }
             }
         });
@@ -591,7 +591,7 @@ public class CastService extends DeviceService implements MediaPlayer,
                                                                     listener,
                                                                     new MediaLaunchObject(
                                                                             webAppSession.launchSession,
-                                                                            CastService.this));
+                                                                            FlintService.this));
                                                         } else {
                                                             Util.postError(
                                                                     listener,
@@ -989,7 +989,7 @@ public class CastService extends DeviceService implements MediaPlayer,
             if (currentAppId == null)
                 return;
 
-            CastWebAppSession webAppSession = sessions.get(currentAppId);
+            FlintWebAppSession webAppSession = sessions.get(currentAppId);
 
             if (webAppSession == null)
                 return;
@@ -1107,7 +1107,7 @@ public class CastService extends DeviceService implements MediaPlayer,
 
             if (Flint.FlintApi.getApplicationStatus(mApiClient) != null
                     && currentAppId != null) {
-                CastWebAppSession webAppSession = sessions.get(currentAppId);
+                FlintWebAppSession webAppSession = sessions.get(currentAppId);
 
                 webAppSession.connect(null);
             } else {
@@ -1137,7 +1137,7 @@ public class CastService extends DeviceService implements MediaPlayer,
                                 "Failed to connect to Google Cast device",
                                 result);
 
-                        listener.onConnectionFailure(CastService.this, error);
+                        listener.onConnectionFailure(FlintService.this, error);
                     }
                 }
             });
@@ -1168,8 +1168,8 @@ public class CastService extends DeviceService implements MediaPlayer,
                 // launchSession.setSessionType(LaunchSessionType.WebApp);
                 // launchSession.setService(CastService.this);
 
-                CastWebAppSession webAppSession = new CastWebAppSession(
-                        launchSession, CastService.this);
+                FlintWebAppSession webAppSession = new FlintWebAppSession(
+                        launchSession, FlintService.this);
                 webAppSession.setMetadata(applicationMetadata);
 
                 sessions.put(currentAppId, webAppSession);

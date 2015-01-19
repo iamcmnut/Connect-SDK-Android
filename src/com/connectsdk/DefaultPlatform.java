@@ -23,8 +23,8 @@ public class DefaultPlatform {
                 "com.connectsdk.discovery.provider.CastDiscoveryProvider");
         devicesList.put("com.connectsdk.service.AirPlayService",
                 "com.connectsdk.discovery.provider.ZeroconfDiscoveryProvider");
-        devicesList.put("com.connectsdk.flint.CastService",
-                "com.connectsdk.flint.CastDiscoveryProvider");
+        devicesList.put("com.connectsdk.service.FlintService",
+                "com.connectsdk.discovery.provider.FlintDiscoveryProvider");
         return devicesList;
     }
 

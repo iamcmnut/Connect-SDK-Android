@@ -22,10 +22,10 @@ package com.connectsdk.service.config;
 
 import tv.matchstick.flint.FlintDevice;
 
-public class CastServiceDescription extends ServiceDescription {
+public class FlintServiceDescription extends ServiceDescription {
 	FlintDevice flintDevice;
 	
-	public CastServiceDescription(String serviceFilter, String UUID, String ipAddress, FlintDevice castDevice) {
+	public FlintServiceDescription(String serviceFilter, String UUID, String ipAddress, FlintDevice castDevice) {
 		super(serviceFilter, UUID, ipAddress);
 		this.flintDevice = castDevice;
 	}

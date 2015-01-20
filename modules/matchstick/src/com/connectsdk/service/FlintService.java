@@ -113,6 +113,9 @@ public class FlintService extends DeviceService implements MediaPlayer,
     public FlintService(ServiceDescription serviceDescription,
             ServiceConfig serviceConfig) {
         super(serviceDescription, serviceConfig);
+
+        Flint.FlintApi.setApplicationId(getApplicationId());
+
         mCastClientListener = new CastListener();
         mConnectionCallbacks = new ConnectionCallbacks();
 
@@ -120,6 +123,10 @@ public class FlintService extends DeviceService implements MediaPlayer,
         subscriptions = new ArrayList<URLServiceSubscription<?>>();
 
         mWaitingForReconnect = false;
+    }
+    
+    private String getApplicationId() {
+        return "~connect";
     }
 
     @Override
@@ -685,12 +692,10 @@ public class FlintService extends DeviceService implements MediaPlayer,
             final boolean relaunchIfRunning,
             final WebAppSession.LaunchListener listener) {
         launchingAppId = webAppId;
-        android.util.Log.d("XXXXXXXX", "launchWebApp");
         ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
             public void onConnected() {
-                android.util.Log.d("XXXXXXXX", "webAppId = " + webAppId);
                 Flint.FlintApi.launchApplication(mApiClient, webAppId,
                         relaunchIfRunning).setResultCallback(
                         new ApplicationConnectionResultCallback(

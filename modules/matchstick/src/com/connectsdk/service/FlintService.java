@@ -1168,10 +1168,10 @@ public class FlintService extends DeviceService implements MediaPlayer,
 
                 LaunchSession launchSession = LaunchSession
                         .launchSessionForAppId(currentAppId);
-                // launchSession.setAppName(applicationMetadata.getName());
-                // launchSession.setSessionId(result.getSessionId());
-                // launchSession.setSessionType(LaunchSessionType.WebApp);
-                // launchSession.setService(CastService.this);
+//                 launchSession.setAppName(applicationMetadata.getName());
+//                 launchSession.setSessionId(result.getSessionId());
+                launchSession.setSessionType(LaunchSessionType.WebApp);
+                launchSession.setService(FlintService.this);
 
                 FlintWebAppSession webAppSession = new FlintWebAppSession(
                         launchSession, FlintService.this);

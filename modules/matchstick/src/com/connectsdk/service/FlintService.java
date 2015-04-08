@@ -69,13 +69,15 @@ import tv.matchstick.flint.ResultCallback;
 import tv.matchstick.flint.Status;
 import tv.matchstick.flint.images.WebImage;
 
-public class FlintService extends DeviceService implements MediaPlayer, MediaControl, VolumeControl, WebAppLauncher {
+public class FlintService extends DeviceService implements MediaPlayer,
+        MediaControl, VolumeControl, WebAppLauncher {
     interface ConnectionListener {
         void onConnected();
     };
 
-    public interface LaunchWebAppListener{
+    public interface LaunchWebAppListener {
         void onSuccess(WebAppSession webAppSession);
+
         void onFailure(ServiceCommandError error);
     };
 
@@ -106,19 +108,23 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     float currentVolumeLevel;
     boolean currentMuteStatus;
     boolean mWaitingForReconnect;
-    
+
+    float currentStreamVolumeLevel;
+    boolean currentStreamMuteStatus;
+
     static String applicationID = "~flintplayer";
 
     private String APPLICATION_URL = "http://openflint.github.io/flint-player/player.html";
-    
+
     // Queue of commands that should be sent once register is complete
     CopyOnWriteArraySet<ConnectionListener> commandQueue = new CopyOnWriteArraySet<ConnectionListener>();
 
-    public FlintService(ServiceDescription serviceDescription, ServiceConfig serviceConfig) {
+    public FlintService(ServiceDescription serviceDescription,
+            ServiceConfig serviceConfig) {
         super(serviceDescription, serviceConfig);
 
         Flint.FlintApi.setApplicationId(getApplicationID());
-        
+
         mFlintClientListener = new FlintListener();
         mConnectionCallbacks = new ConnectionCallbacks();
 
@@ -140,23 +146,21 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     public static void setApplicationID(String id) {
         applicationID = id;
     }
-    
+
     public static String getApplicationID() {
         return applicationID;
     }
 
     @Override
-    public CapabilityPriorityLevel getPriorityLevel(Class<? extends CapabilityMethods> clazz) {
+    public CapabilityPriorityLevel getPriorityLevel(
+            Class<? extends CapabilityMethods> clazz) {
         if (clazz.equals(MediaPlayer.class)) {
             return getMediaPlayerCapabilityLevel();
-        }
-        else if (clazz.equals(MediaControl.class)) {
+        } else if (clazz.equals(MediaControl.class)) {
             return getMediaControlCapabilityLevel();
-        }
-        else if (clazz.equals(VolumeControl.class)) {
+        } else if (clazz.equals(VolumeControl.class)) {
             return getVolumeControlCapabilityLevel();
-        }
-        else if (clazz.equals(WebAppLauncher.class)) {
+        } else if (clazz.equals(WebAppLauncher.class)) {
             return getWebAppLauncherCapabilityLevel();
         }
         return CapabilityPriorityLevel.NOT_SUPPORTED;
@@ -164,13 +168,14 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
     @Override
     public void connect() {
-        if (connected && mApiClient != null &&
-                mApiClient.isConnecting() && mApiClient.isConnected())
+        if (connected && mApiClient != null && mApiClient.isConnecting()
+                && mApiClient.isConnected())
             return;
 
         if (flintDevice == null) {
             if (getServiceDescription() instanceof FlintServiceDescription)
-                this.flintDevice = ((FlintServiceDescription)getServiceDescription()).getFlintDevice();
+                this.flintDevice = ((FlintServiceDescription) getServiceDescription())
+                        .getFlintDevice();
         }
 
         if (mApiClient == null) {
@@ -183,10 +188,9 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
         Flint.FlintOptions.Builder apiOptionsBuilder = Flint.FlintOptions
                 .builder(flintDevice, mFlintClientListener);
 
-        return new FlintManager.Builder(DiscoveryManager.getInstance().getContext())
-                .addApi(Flint.API, apiOptionsBuilder.build())
-                .addConnectionCallbacks(mConnectionCallbacks)
-                .build();
+        return new FlintManager.Builder(DiscoveryManager.getInstance()
+                .getContext()).addApi(Flint.API, apiOptionsBuilder.build())
+                .addConnectionCallbacks(mConnectionCallbacks).build();
     }
 
     @Override
@@ -239,7 +243,8 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
                     mMediaPlayer.play(mApiClient);
                     Util.postSuccess(listener, null);
                 } catch (Exception e) {
-                    Util.postError(listener, new ServiceCommandError(0, "Unable to play", null));
+                    Util.postError(listener, new ServiceCommandError(0,
+                            "Unable to play", null));
                 }
             }
         };
@@ -258,7 +263,8 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
                     Util.postSuccess(listener, null);
                 } catch (Exception e) {
-                    Util.postError(listener, new ServiceCommandError(0, "Unable to pause", null));
+                    Util.postError(listener, new ServiceCommandError(0,
+                            "Unable to pause", null));
                 }
             }
         };
@@ -277,7 +283,8 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
                     Util.postSuccess(listener, null);
                 } catch (Exception e) {
-                    Util.postError(listener, new ServiceCommandError(0, "Unable to stop", null));
+                    Util.postError(listener, new ServiceCommandError(0,
+                            "Unable to stop", null));
                 }
             }
         };
@@ -306,9 +313,11 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public void seek(final long position, final ResponseListener<Object> listener) {
+    public void seek(final long position,
+            final ResponseListener<Object> listener) {
         if (mMediaPlayer == null || mMediaPlayer.getMediaStatus() == null) {
-            Util.postError(listener, new ServiceCommandError(0, "There is no media currently available", null));
+            Util.postError(listener, new ServiceCommandError(0,
+                    "There is no media currently available", null));
             return;
         }
 
@@ -316,20 +325,28 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
             @Override
             public void onConnected() {
-                mMediaPlayer.seek(mApiClient, position, RemoteMediaPlayer.RESUME_STATE_UNCHANGED).setResultCallback(
-                        new ResultCallback<MediaChannelResult>() {
+                mMediaPlayer.seek(mApiClient, position,
+                        RemoteMediaPlayer.RESUME_STATE_UNCHANGED)
+                        .setResultCallback(
+                                new ResultCallback<MediaChannelResult>() {
 
-                            @Override
-                            public void onResult(MediaChannelResult result) {
-                                Status status = result.getStatus();
+                                    @Override
+                                    public void onResult(
+                                            MediaChannelResult result) {
+                                        Status status = result.getStatus();
 
-                                if (status.isSuccess()) {
-                                    Util.postSuccess(listener, null);
-                                } else {
-                                    Util.postError(listener, new ServiceCommandError(status.getStatusCode(), status.getStatusMessage(), status));
-                                }
-                            }
-                        });
+                                        if (status.isSuccess()) {
+                                            Util.postSuccess(listener, null);
+                                        } else {
+                                            Util.postError(
+                                                    listener,
+                                                    new ServiceCommandError(
+                                                            status.getStatusCode(),
+                                                            status.getStatusMessage(),
+                                                            status));
+                                        }
+                                    }
+                                });
             }
         };
 
@@ -340,19 +357,20 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     public void getDuration(final DurationListener listener) {
         if (mMediaPlayer != null && mMediaPlayer.getMediaStatus() != null) {
             Util.postSuccess(listener, mMediaPlayer.getStreamDuration());
-        }
-        else {
-            Util.postError(listener, new ServiceCommandError(0, "There is no media currently available", null));
+        } else {
+            Util.postError(listener, new ServiceCommandError(0,
+                    "There is no media currently available", null));
         }
     }
 
     @Override
     public void getPosition(final PositionListener listener) {
         if (mMediaPlayer != null && mMediaPlayer.getMediaStatus() != null) {
-            Util.postSuccess(listener, mMediaPlayer.getApproximateStreamPosition());
-        }
-        else {
-            Util.postError(listener, new ServiceCommandError(0, "There is no media currently available", null));
+            Util.postSuccess(listener,
+                    mMediaPlayer.getApproximateStreamPosition());
+        } else {
+            Util.postError(listener, new ServiceCommandError(0,
+                    "There is no media currently available", null));
         }
     }
 
@@ -374,25 +392,30 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
         if (mMediaPlayer.getMediaInfo() != null) {
             String url = mMediaPlayer.getMediaInfo().getContentId();
             String mimeType = mMediaPlayer.getMediaInfo().getContentType();
-            String iconUrl = mMediaPlayer.getMediaInfo().getMetadata().getImages().get(0).getUrl().toString();
-            String title = mMediaPlayer.getMediaInfo().getMetadata().getString(MediaMetadata.KEY_TITLE);
-            String description =  mMediaPlayer.getMediaInfo().getMetadata().getString(MediaMetadata.KEY_SUBTITLE);
+            String iconUrl = mMediaPlayer.getMediaInfo().getMetadata()
+                    .getImages().get(0).getUrl().toString();
+            String title = mMediaPlayer.getMediaInfo().getMetadata()
+                    .getString(MediaMetadata.KEY_TITLE);
+            String description = mMediaPlayer.getMediaInfo().getMetadata()
+                    .getString(MediaMetadata.KEY_SUBTITLE);
 
             ArrayList<ImageInfo> list = new ArrayList<ImageInfo>();
             list.add(new ImageInfo(iconUrl));
-            MediaInfo info = new MediaInfo(url, mimeType, title, description, list);
+            MediaInfo info = new MediaInfo(url, mimeType, title, description,
+                    list);
 
             Util.postSuccess(listener, info);
-        }
-        else {
-            Util.postError(listener, new ServiceCommandError(0, "Media Info is null", null));
+        } else {
+            Util.postError(listener, new ServiceCommandError(0,
+                    "Media Info is null", null));
         }
     }
 
     @Override
     public ServiceSubscription<MediaInfoListener> subscribeMediaInfo(
             MediaInfoListener listener) {
-        URLServiceSubscription<MediaInfoListener> request = new URLServiceSubscription<MediaInfoListener>(this, "info", null, null);
+        URLServiceSubscription<MediaInfoListener> request = new URLServiceSubscription<MediaInfoListener>(
+                this, "info", null, null);
         request.addListener(listener);
         addSubscription(request);
 
@@ -405,47 +428,59 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
         }
 
         mMediaPlayer = createMediaPlayer();
-        mMediaPlayer.setOnStatusUpdatedListener(new RemoteMediaPlayer.OnStatusUpdatedListener() {
+        mMediaPlayer
+                .setOnStatusUpdatedListener(new RemoteMediaPlayer.OnStatusUpdatedListener() {
 
-            @Override
-            public void onStatusUpdated() {
-                if (subscriptions.size() > 0) {
-                    for (URLServiceSubscription<?> subscription: subscriptions) {
-                        if (subscription.getTarget().equalsIgnoreCase(PLAY_STATE)) {
-                            for (int i = 0; i < subscription.getListeners().size(); i++) {
-                                @SuppressWarnings("unchecked")
-                                ResponseListener<Object> listener = (ResponseListener<Object>) subscription.getListeners().get(i);
-                                PlayStateStatus status = PlayStateStatus.convertPlayerStateToPlayStateStatus(mMediaPlayer.getMediaStatus().getPlayerState());
-                                Util.postSuccess(listener, status);
+                    @Override
+                    public void onStatusUpdated() {
+                        if (subscriptions.size() > 0) {
+                            for (URLServiceSubscription<?> subscription : subscriptions) {
+                                if (subscription.getTarget().equalsIgnoreCase(
+                                        PLAY_STATE)) {
+                                    for (int i = 0; i < subscription
+                                            .getListeners().size(); i++) {
+                                        @SuppressWarnings("unchecked")
+                                        ResponseListener<Object> listener = (ResponseListener<Object>) subscription
+                                                .getListeners().get(i);
+                                        PlayStateStatus status = PlayStateStatus
+                                                .convertPlayerStateToPlayStateStatus(mMediaPlayer
+                                                        .getMediaStatus()
+                                                        .getPlayerState());
+                                        Util.postSuccess(listener, status);
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
-        });
+                });
 
-        mMediaPlayer.setOnMetadataUpdatedListener(new RemoteMediaPlayer.OnMetadataUpdatedListener() {
-            @Override
-            public void onMetadataUpdated() {
-                if (subscriptions.size() > 0) {
-                    for (URLServiceSubscription<?> subscription: subscriptions) {
-                        if (subscription.getTarget().equalsIgnoreCase("info")) {
-                            for (int i = 0; i < subscription.getListeners().size(); i++) {
-                                MediaInfoListener listener = (MediaInfoListener) subscription.getListeners().get(i);
-                                getMediaInfo(listener);
+        mMediaPlayer
+                .setOnMetadataUpdatedListener(new RemoteMediaPlayer.OnMetadataUpdatedListener() {
+                    @Override
+                    public void onMetadataUpdated() {
+                        if (subscriptions.size() > 0) {
+                            for (URLServiceSubscription<?> subscription : subscriptions) {
+                                if (subscription.getTarget().equalsIgnoreCase(
+                                        "info")) {
+                                    for (int i = 0; i < subscription
+                                            .getListeners().size(); i++) {
+                                        MediaInfoListener listener = (MediaInfoListener) subscription
+                                                .getListeners().get(i);
+                                        getMediaInfo(listener);
+                                    }
+                                }
                             }
                         }
                     }
-                }
-            }
-        });
+                });
 
         if (mApiClient != null) {
             try {
-                Flint.FlintApi.setMessageReceivedCallbacks(mApiClient, mMediaPlayer.getNamespace(),
-                        mMediaPlayer);
+                Flint.FlintApi.setMessageReceivedCallbacks(mApiClient,
+                        mMediaPlayer.getNamespace(), mMediaPlayer);
             } catch (Exception e) {
-                Log.w("Connect SDK", "Exception while creating media channel", e);
+                Log.w("Connect SDK", "Exception while creating media channel",
+                        e);
             }
         }
     }
@@ -468,8 +503,9 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
     @Override
     public void displayImage(String url, String mimeType, String title,
-                             String description, String iconSrc, LaunchListener listener) {
-        MediaMetadata mMediaMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_PHOTO);
+            String description, String iconSrc, LaunchListener listener) {
+        MediaMetadata mMediaMetadata = new MediaMetadata(
+                MediaMetadata.MEDIA_TYPE_PHOTO);
         mMediaMetadata.putString(MediaMetadata.KEY_TITLE, title);
         mMediaMetadata.putString(MediaMetadata.KEY_SUBTITLE, description);
 
@@ -479,13 +515,11 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
             mMediaMetadata.addImage(image);
         }
 
-        tv.matchstick.flint.MediaInfo mediaInformation = new tv.matchstick.flint.MediaInfo.Builder(url)
-                .setContentType(mimeType)
+        tv.matchstick.flint.MediaInfo mediaInformation = new tv.matchstick.flint.MediaInfo.Builder(
+                url).setContentType(mimeType)
                 .setStreamType(tv.matchstick.flint.MediaInfo.STREAM_TYPE_NONE)
-                .setMetadata(mMediaMetadata)
-                .setStreamDuration(0)
-                .setCustomData(null)
-                .build();
+                .setMetadata(mMediaMetadata).setStreamDuration(0)
+                .setCustomData(null).build();
 
         playMedia(mediaInformation, APPLICATION_URL, listener);
     }
@@ -495,14 +529,17 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
         ImageInfo imageInfo = mediaInfo.getImages().get(0);
         String iconSrc = imageInfo.getUrl();
 
-        displayImage(mediaInfo.getUrl(), mediaInfo.getMimeType(), mediaInfo.getTitle(), mediaInfo.getDescription(), iconSrc, listener);
+        displayImage(mediaInfo.getUrl(), mediaInfo.getMimeType(),
+                mediaInfo.getTitle(), mediaInfo.getDescription(), iconSrc,
+                listener);
     }
 
     @Override
     public void playMedia(String url, String mimeType, String title,
-                          String description, String iconSrc, boolean shouldLoop,
-                          LaunchListener listener) {
-        MediaMetadata mMediaMetadata = new MediaMetadata(MediaMetadata.MEDIA_TYPE_MOVIE);
+            String description, String iconSrc, boolean shouldLoop,
+            LaunchListener listener) {
+        MediaMetadata mMediaMetadata = new MediaMetadata(
+                MediaMetadata.MEDIA_TYPE_MOVIE);
         mMediaMetadata.putString(MediaMetadata.KEY_TITLE, title);
         mMediaMetadata.putString(MediaMetadata.KEY_SUBTITLE, description);
 
@@ -512,61 +549,82 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
             mMediaMetadata.addImage(image);
         }
 
-        tv.matchstick.flint.MediaInfo mediaInformation = new tv.matchstick.flint.MediaInfo.Builder(url)
+        tv.matchstick.flint.MediaInfo mediaInformation = new tv.matchstick.flint.MediaInfo.Builder(
+                url)
                 .setContentType(mimeType)
-                .setStreamType(tv.matchstick.flint.MediaInfo.STREAM_TYPE_BUFFERED)
-                .setMetadata(mMediaMetadata)
-                .setStreamDuration(1000)
-                .setCustomData(null)
-                .build();
+                .setStreamType(
+                        tv.matchstick.flint.MediaInfo.STREAM_TYPE_BUFFERED)
+                .setMetadata(mMediaMetadata).setStreamDuration(1000)
+                .setCustomData(null).build();
 
         playMedia(mediaInformation, APPLICATION_URL, listener);
     }
 
     @Override
-    public void playMedia(MediaInfo mediaInfo, boolean shouldLoop, LaunchListener listener) {
+    public void playMedia(MediaInfo mediaInfo, boolean shouldLoop,
+            LaunchListener listener) {
         ImageInfo imageInfo = mediaInfo.getImages().get(0);
         String iconSrc = imageInfo.getUrl();
 
-        playMedia(mediaInfo.getUrl(), mediaInfo.getMimeType(), mediaInfo.getTitle(), mediaInfo.getDescription(), iconSrc, shouldLoop, listener);
+        playMedia(mediaInfo.getUrl(), mediaInfo.getMimeType(),
+                mediaInfo.getTitle(), mediaInfo.getDescription(), iconSrc,
+                shouldLoop, listener);
     }
 
-    private void playMedia(final tv.matchstick.flint.MediaInfo mediaInformation, final String mediaAppId, final LaunchListener listener) {
-        final ApplicationConnectionResultCallback webAppLaunchCallback = new ApplicationConnectionResultCallback(new LaunchWebAppListener() {
-
-            @Override
-            public void onSuccess(final WebAppSession webAppSession) {
-                ConnectionListener connectionListener = new ConnectionListener() {
+    private void playMedia(
+            final tv.matchstick.flint.MediaInfo mediaInformation,
+            final String mediaAppId, final LaunchListener listener) {
+        final ApplicationConnectionResultCallback webAppLaunchCallback = new ApplicationConnectionResultCallback(
+                new LaunchWebAppListener() {
 
                     @Override
-                    public void onConnected() {
-                        mMediaPlayer.load(mApiClient, mediaInformation, true).setResultCallback(new ResultCallback<RemoteMediaPlayer.MediaChannelResult>() {
+                    public void onSuccess(final WebAppSession webAppSession) {
+                        ConnectionListener connectionListener = new ConnectionListener() {
 
                             @Override
-                            public void onResult(MediaChannelResult result) {
-                                Status status = result.getStatus();
+                            public void onConnected() {
+                                mMediaPlayer
+                                        .load(mApiClient, mediaInformation,
+                                                true)
+                                        .setResultCallback(
+                                                new ResultCallback<RemoteMediaPlayer.MediaChannelResult>() {
 
-                                if (status.isSuccess()) {
-                                    webAppSession.launchSession.setSessionType(LaunchSessionType.Media);
+                                                    @Override
+                                                    public void onResult(
+                                                            MediaChannelResult result) {
+                                                        Status status = result
+                                                                .getStatus();
 
-                                    Util.postSuccess(listener, new MediaLaunchObject(webAppSession.launchSession, FlintService.this));
-                                }
-                                else {
-                                    Util.postError(listener, new ServiceCommandError(status.getStatusCode(), status.getStatusMessage(), status));
-                                }
+                                                        if (status.isSuccess()) {
+                                                            webAppSession.launchSession
+                                                                    .setSessionType(LaunchSessionType.Media);
+
+                                                            Util.postSuccess(
+                                                                    listener,
+                                                                    new MediaLaunchObject(
+                                                                            webAppSession.launchSession,
+                                                                            FlintService.this));
+                                                        } else {
+                                                            Util.postError(
+                                                                    listener,
+                                                                    new ServiceCommandError(
+                                                                            status.getStatusCode(),
+                                                                            status.getStatusMessage(),
+                                                                            status));
+                                                        }
+                                                    }
+                                                });
                             }
-                        });
+                        };
+
+                        runCommand(connectionListener);
                     }
-                };
 
-                runCommand(connectionListener);
-            }
-
-            @Override
-            public void onFailure(ServiceCommandError error) {
-                Util.postError(listener, error);
-            }
-        });
+                    @Override
+                    public void onFailure(ServiceCommandError error) {
+                        Util.postError(listener, error);
+                    }
+                });
 
         launchingAppId = mediaAppId;
 
@@ -576,10 +634,13 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
             public void onConnected() {
                 boolean relaunchIfRunning = false;
 
-                if (Flint.FlintApi.getApplicationStatus(mApiClient) == null || (!mediaAppId.equals(currentAppId)))
+                if (Flint.FlintApi.getApplicationStatus(mApiClient) == null
+                        || (!mediaAppId.equals(currentAppId)))
                     relaunchIfRunning = true;
 
-                Flint.FlintApi.launchApplication(mApiClient, mediaAppId, relaunchIfRunning).setResultCallback(webAppLaunchCallback);
+                Flint.FlintApi.launchApplication(mApiClient, mediaAppId,
+                        relaunchIfRunning).setResultCallback(
+                        webAppLaunchCallback);
             }
         };
 
@@ -587,22 +648,28 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public void closeMedia(final LaunchSession launchSession, final ResponseListener<Object> listener) {
+    public void closeMedia(final LaunchSession launchSession,
+            final ResponseListener<Object> listener) {
         ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
             public void onConnected() {
-                Flint.FlintApi.stopApplication(mApiClient).setResultCallback(new ResultCallback<Status>() {
+                Flint.FlintApi.stopApplication(mApiClient).setResultCallback(
+                        new ResultCallback<Status>() {
 
-                    @Override
-                    public void onResult(Status result) {
-                        if (result.isSuccess()) {
-                            Util.postSuccess(listener, result);
-                        } else {
-                            Util.postError(listener, new ServiceCommandError(result.getStatusCode(), result.getStatusMessage(), result));
-                        }
-                    }
-                });
+                            @Override
+                            public void onResult(Status result) {
+                                if (result.isSuccess()) {
+                                    Util.postSuccess(listener, result);
+                                } else {
+                                    Util.postError(
+                                            listener,
+                                            new ServiceCommandError(result
+                                                    .getStatusCode(), result
+                                                    .getStatusMessage(), result));
+                                }
+                            }
+                        });
             }
         };
 
@@ -620,32 +687,39 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public void launchWebApp(String webAppId, WebAppSession.LaunchListener listener) {
+    public void launchWebApp(String webAppId,
+            WebAppSession.LaunchListener listener) {
         launchWebApp(webAppId, true, listener);
     }
 
     @Override
-    public void launchWebApp(final String webAppId, final boolean relaunchIfRunning, final WebAppSession.LaunchListener listener) {
+    public void launchWebApp(final String webAppId,
+            final boolean relaunchIfRunning,
+            final WebAppSession.LaunchListener listener) {
         launchingAppId = webAppId;
 
         ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
             public void onConnected() {
-                Flint.FlintApi.launchApplication(mApiClient, webAppId, relaunchIfRunning).setResultCallback(
-                        new ApplicationConnectionResultCallback(new LaunchWebAppListener() {
+                Flint.FlintApi.launchApplication(mApiClient, webAppId,
+                        relaunchIfRunning).setResultCallback(
+                        new ApplicationConnectionResultCallback(
+                                new LaunchWebAppListener() {
 
-                            @Override
-                            public void onSuccess(WebAppSession webAppSession) {
-                                Util.postSuccess(listener, webAppSession);
-                            }
+                                    @Override
+                                    public void onSuccess(
+                                            WebAppSession webAppSession) {
+                                        Util.postSuccess(listener,
+                                                webAppSession);
+                                    }
 
-                            @Override
-                            public void onFailure(ServiceCommandError error) {
-                                Util.postError(listener, error);
-                            }
-                        })
-                );
+                                    @Override
+                                    public void onFailure(
+                                            ServiceCommandError error) {
+                                        Util.postError(listener, error);
+                                    }
+                                }));
             }
         };
 
@@ -653,40 +727,44 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public void launchWebApp(String webAppId, JSONObject params, WebAppSession.LaunchListener listener) {
+    public void launchWebApp(String webAppId, JSONObject params,
+            WebAppSession.LaunchListener listener) {
         Util.postError(listener, ServiceCommandError.notSupported());
     }
 
     @Override
-    public void launchWebApp(String webAppId, JSONObject params, boolean relaunchIfRunning, WebAppSession.LaunchListener listener) {
+    public void launchWebApp(String webAppId, JSONObject params,
+            boolean relaunchIfRunning, WebAppSession.LaunchListener listener) {
         Util.postError(listener, ServiceCommandError.notSupported());
     }
 
     @Override
-    public void joinWebApp(final LaunchSession webAppLaunchSession, final WebAppSession.LaunchListener listener) {
-        final ApplicationConnectionResultCallback webAppLaunchCallback = new ApplicationConnectionResultCallback(new LaunchWebAppListener() {
-
-            @Override
-            public void onSuccess(final WebAppSession webAppSession) {
-                webAppSession.connect(new ResponseListener<Object>() {
+    public void joinWebApp(final LaunchSession webAppLaunchSession,
+            final WebAppSession.LaunchListener listener) {
+        final ApplicationConnectionResultCallback webAppLaunchCallback = new ApplicationConnectionResultCallback(
+                new LaunchWebAppListener() {
 
                     @Override
-                    public void onSuccess(Object object) {
-                        Util.postSuccess(listener, webAppSession);
+                    public void onSuccess(final WebAppSession webAppSession) {
+                        webAppSession.connect(new ResponseListener<Object>() {
+
+                            @Override
+                            public void onSuccess(Object object) {
+                                Util.postSuccess(listener, webAppSession);
+                            }
+
+                            @Override
+                            public void onError(ServiceCommandError error) {
+                                Util.postError(listener, error);
+                            }
+                        });
                     }
 
                     @Override
-                    public void onError(ServiceCommandError error) {
+                    public void onFailure(ServiceCommandError error) {
                         Util.postError(listener, error);
                     }
                 });
-            }
-
-            @Override
-            public void onFailure(ServiceCommandError error) {
-                Util.postError(listener, error);
-            }
-        });
 
         launchingAppId = webAppLaunchSession.getAppId();
 
@@ -694,7 +772,9 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
             @Override
             public void onConnected() {
-                Flint.FlintApi.joinApplication(mApiClient, webAppLaunchSession.getAppId()).setResultCallback(webAppLaunchCallback);
+                Flint.FlintApi.joinApplication(mApiClient,
+                        webAppLaunchSession.getAppId()).setResultCallback(
+                        webAppLaunchCallback);
             }
         };
 
@@ -702,8 +782,10 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public void joinWebApp(String webAppId, WebAppSession.LaunchListener listener) {
-        LaunchSession launchSession = LaunchSession.launchSessionForAppId(webAppId);
+    public void joinWebApp(String webAppId,
+            WebAppSession.LaunchListener listener) {
+        LaunchSession launchSession = LaunchSession
+                .launchSessionForAppId(webAppId);
         launchSession.setSessionType(LaunchSessionType.WebApp);
         launchSession.setService(this);
 
@@ -711,23 +793,28 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public void closeWebApp(LaunchSession launchSession, final ResponseListener<Object> listener) {
+    public void closeWebApp(LaunchSession launchSession,
+            final ResponseListener<Object> listener) {
         ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
             public void onConnected() {
-                Flint.FlintApi.stopApplication(mApiClient).setResultCallback(new ResultCallback<Status>() {
+                Flint.FlintApi.stopApplication(mApiClient).setResultCallback(
+                        new ResultCallback<Status>() {
 
-                    @Override
-                    public void onResult(Status status) {
-                        if (status.isSuccess()) {
-                            Util.postSuccess(listener, null);
-                        }
-                        else {
-                            Util.postError(listener, new ServiceCommandError(status.getStatusCode(), status.getStatusMessage(), status));
-                        }
-                    }
-                });
+                            @Override
+                            public void onResult(Status status) {
+                                if (status.isSuccess()) {
+                                    Util.postSuccess(listener, null);
+                                } else {
+                                    Util.postError(
+                                            listener,
+                                            new ServiceCommandError(status
+                                                    .getStatusCode(), status
+                                                    .getStatusMessage(), status));
+                                }
+                            }
+                        });
             }
         };
 
@@ -774,12 +861,11 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
             public void onSuccess(final Float volume) {
                 if (volume >= 1.0) {
                     Util.postSuccess(listener, null);
-                }
-                else {
-                    float newVolume = (float)(volume + 0.01);
+                } else {
+                    float newVolume = (float) (volume + 0.01);
 
                     if (newVolume > 1.0)
-                        newVolume = (float)1.0;
+                        newVolume = (float) 1.0;
 
                     setVolume(newVolume, listener);
 
@@ -802,12 +888,11 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
             public void onSuccess(final Float volume) {
                 if (volume <= 0.0) {
                     Util.postSuccess(listener, null);
-                }
-                else {
-                    float newVolume = (float)(volume - 0.01);
+                } else {
+                    float newVolume = (float) (volume - 0.01);
 
                     if (newVolume < 0.0)
-                        newVolume = (float)0.0;
+                        newVolume = (float) 0.0;
 
                     setVolume(newVolume, listener);
 
@@ -823,18 +908,27 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public void setVolume(final float volume, final ResponseListener<Object> listener) {
+    public void setVolume(final float volume,
+            final ResponseListener<Object> listener) {
         ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
             public void onConnected() {
                 try {
                     Log.e("Connect SDK", "volume:" + volume);
-                    Flint.FlintApi.setVolume(mApiClient, volume);
+                    if (mMediaPlayer != null
+                            && mMediaPlayer.getMediaStatus() != null) {
+                        Log.e("Connect SDK", "stream volume:" + volume);
+                        mMediaPlayer.setStreamVolume(mApiClient, volume);
+                    } else {
+                        Log.e("Connect SDK", "device volume:" + volume);
+                        Flint.FlintApi.setVolume(mApiClient, volume);
+                    }
 
                     Util.postSuccess(listener, null);
                 } catch (IOException e) {
-                    Util.postError(listener, new ServiceCommandError(0, "setting volume level failed", null));
+                    Util.postError(listener, new ServiceCommandError(0,
+                            "setting volume level failed", null));
                 }
             }
         };
@@ -844,21 +938,55 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
     @Override
     public void getVolume(VolumeListener listener) {
-        Util.postSuccess(listener, currentVolumeLevel);
+        try {
+            currentVolumeLevel = (float) Flint.FlintApi
+                    .getVolume(mApiClient);
+            currentMuteStatus = Flint.FlintApi.isMute(mApiClient);
+
+            if (mMediaPlayer != null
+                    && mMediaPlayer.getMediaStatus() != null) {
+                currentStreamVolumeLevel = (float) mMediaPlayer
+                        .getMediaStatus().getStreamVolume();
+                currentStreamMuteStatus = mMediaPlayer
+                        .getMediaStatus().isMute();
+            }
+
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        }
+        
+        if (mMediaPlayer != null && mMediaPlayer.getMediaStatus() != null) {
+            // Log.e("Matchstick", "getVolume: streamVolume[" +
+            // currentStreamVolumeLevel + "]");
+            Util.postSuccess(listener, currentStreamVolumeLevel);
+        } else {
+            // Log.e("Matchstick", "getVolume: deviceVolume[" +
+            // currentStreamVolumeLevel + "]");
+            Util.postSuccess(listener, currentVolumeLevel);
+        }
     }
 
     @Override
-    public void setMute(final boolean isMute, final ResponseListener<Object> listener) {
+    public void setMute(final boolean isMute,
+            final ResponseListener<Object> listener) {
         ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
             public void onConnected() {
                 try {
-                    Flint.FlintApi.setMute(mApiClient, isMute);
+                    if (mMediaPlayer != null
+                            && mMediaPlayer.getMediaStatus() != null) {
+                        Log.e("Connect SDK", "set stream Mute:" + isMute);
+                        mMediaPlayer.setStreamMute(mApiClient, isMute);
+                    } else {
+                        Log.e("Connect SDK", "set device Mute:" + isMute);
+                        Flint.FlintApi.setMute(mApiClient, isMute);
+                    }
 
                     Util.postSuccess(listener, null);
                 } catch (IOException e) {
-                    Util.postError(listener, new ServiceCommandError(0, "setting mute status failed", null));
+                    Util.postError(listener, new ServiceCommandError(0,
+                            "setting mute status failed", null));
                 }
             }
         };
@@ -868,12 +996,19 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
     @Override
     public void getMute(final MuteListener listener) {
-        Util.postSuccess(listener, currentMuteStatus);
+        if (mMediaPlayer != null
+                && mMediaPlayer.getMediaStatus() != null) {
+            Util.postSuccess(listener, currentStreamMuteStatus);
+        } else {
+            Util.postSuccess(listener, currentMuteStatus);
+        }
     }
 
     @Override
-    public ServiceSubscription<VolumeListener> subscribeVolume(VolumeListener listener) {
-        URLServiceSubscription<VolumeListener> request = new URLServiceSubscription<VolumeListener>(this, Flint_SERVICE_VOLUME_SUBSCRIPTION_NAME, null, null);
+    public ServiceSubscription<VolumeListener> subscribeVolume(
+            VolumeListener listener) {
+        URLServiceSubscription<VolumeListener> request = new URLServiceSubscription<VolumeListener>(
+                this, Flint_SERVICE_VOLUME_SUBSCRIPTION_NAME, null, null);
         request.addListener(listener);
         addSubscription(request);
 
@@ -882,7 +1017,8 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
     @Override
     public ServiceSubscription<MuteListener> subscribeMute(MuteListener listener) {
-        URLServiceSubscription<MuteListener> request = new URLServiceSubscription<MuteListener>(this, Flint_SERVICE_MUTE_SUBSCRIPTION_NAME, null, null);
+        URLServiceSubscription<MuteListener> request = new URLServiceSubscription<MuteListener>(
+                this, Flint_SERVICE_MUTE_SUBSCRIPTION_NAME, null, null);
         request.addListener(listener);
         addSubscription(request);
 
@@ -893,8 +1029,12 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     protected void updateCapabilities() {
         List<String> capabilities = new ArrayList<String>();
 
-        for (String capability : MediaPlayer.Capabilities) { capabilities.add(capability); }
-        for (String capability : VolumeControl.Capabilities) { capabilities.add(capability); }
+        for (String capability : MediaPlayer.Capabilities) {
+            capabilities.add(capability);
+        }
+        for (String capability : VolumeControl.Capabilities) {
+            capabilities.add(capability);
+        }
 
         capabilities.add(Play);
         capabilities.add(Pause);
@@ -921,7 +1061,8 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     private class FlintListener extends Flint.Listener {
         @Override
         public void onApplicationDisconnected(int statusCode) {
-            Log.d("Connect SDK", "Flint.Listener.onApplicationDisconnected: " + statusCode);
+            Log.d("Connect SDK", "Flint.Listener.onApplicationDisconnected: "
+                    + statusCode);
 
             if (currentAppId == null)
                 return;
@@ -942,10 +1083,11 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
                 @Override
                 public void onConnected() {
-                    ApplicationMetadata applicationMetadata = Flint.FlintApi.getApplicationMetadata(mApiClient);
+                    ApplicationMetadata applicationMetadata = Flint.FlintApi
+                            .getApplicationMetadata(mApiClient);
 
-//                    if (applicationMetadata != null)
-//                        currentAppId = applicationMetadata.getApplicationId();
+                    // if (applicationMetadata != null)
+                    // currentAppId = applicationMetadata.getApplicationId();
                 }
             };
 
@@ -959,28 +1101,57 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
                 @Override
                 public void onConnected() {
                     try {
-                        currentVolumeLevel = (float) Flint.FlintApi.getVolume(mApiClient);
+                        currentVolumeLevel = (float) Flint.FlintApi
+                                .getVolume(mApiClient);
                         currentMuteStatus = Flint.FlintApi.isMute(mApiClient);
+
+                        if (mMediaPlayer != null
+                                && mMediaPlayer.getMediaStatus() != null) {
+                            currentStreamVolumeLevel = (float) mMediaPlayer
+                                    .getMediaStatus().getStreamVolume();
+                            currentStreamMuteStatus = mMediaPlayer
+                                    .getMediaStatus().isMute();
+                        }
+
                     } catch (IllegalStateException e) {
                         e.printStackTrace();
                     }
 
                     if (subscriptions.size() > 0) {
-                        for (URLServiceSubscription<?> subscription: subscriptions) {
-                            if (subscription.getTarget().equals(Flint_SERVICE_VOLUME_SUBSCRIPTION_NAME)) {
-                                for (int i = 0; i < subscription.getListeners().size(); i++) {
+                        for (URLServiceSubscription<?> subscription : subscriptions) {
+                            if (subscription.getTarget().equals(
+                                    Flint_SERVICE_VOLUME_SUBSCRIPTION_NAME)) {
+                                for (int i = 0; i < subscription.getListeners()
+                                        .size(); i++) {
                                     @SuppressWarnings("unchecked")
-                                    ResponseListener<Object> listener = (ResponseListener<Object>) subscription.getListeners().get(i);
+                                    ResponseListener<Object> listener = (ResponseListener<Object>) subscription
+                                            .getListeners().get(i);
 
-                                    Util.postSuccess(listener, currentVolumeLevel);
+                                    if (mMediaPlayer != null
+                                            && mMediaPlayer.getMediaStatus() != null) {
+                                        Util.postSuccess(listener,
+                                                currentStreamVolumeLevel);
+                                    } else {
+                                        Util.postSuccess(listener,
+                                                currentVolumeLevel);
+                                    }
                                 }
-                            }
-                            else if (subscription.getTarget().equals(Flint_SERVICE_MUTE_SUBSCRIPTION_NAME)) {
-                                for (int i = 0; i < subscription.getListeners().size(); i++) {
+                            } else if (subscription.getTarget().equals(
+                                    Flint_SERVICE_MUTE_SUBSCRIPTION_NAME)) {
+                                for (int i = 0; i < subscription.getListeners()
+                                        .size(); i++) {
                                     @SuppressWarnings("unchecked")
-                                    ResponseListener<Object> listener = (ResponseListener<Object>) subscription.getListeners().get(i);
+                                    ResponseListener<Object> listener = (ResponseListener<Object>) subscription
+                                            .getListeners().get(i);
 
-                                    Util.postSuccess(listener, currentMuteStatus);
+                                    if (mMediaPlayer != null
+                                            && mMediaPlayer.getMediaStatus() != null) {
+                                        Util.postSuccess(listener,
+                                                currentStreamMuteStatus);
+                                    } else {
+                                        Util.postSuccess(listener,
+                                                currentMuteStatus);
+                                    }
                                 }
                             }
                         }
@@ -992,7 +1163,8 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
         }
     }
 
-    private class ConnectionCallbacks implements FlintManager.ConnectionCallbacks {
+    private class ConnectionCallbacks implements
+            FlintManager.ConnectionCallbacks {
         @Override
         public void onConnectionSuspended(final int cause) {
             Log.d("Connect SDK", "ConnectionCallbacks.onConnectionSuspended");
@@ -1003,20 +1175,23 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
 
         @Override
         public void onConnected(Bundle connectionHint) {
-            Log.d("Connect SDK", "ConnectionCallbacks.onConnected, wasWaitingForReconnect: " + mWaitingForReconnect);
+            Log.d("Connect SDK",
+                    "ConnectionCallbacks.onConnected, wasWaitingForReconnect: "
+                            + mWaitingForReconnect);
 
             attachMediaPlayer();
 
             if (mWaitingForReconnect) {
                 mWaitingForReconnect = false;
 
-                if (Flint.FlintApi.getApplicationStatus(mApiClient) != null && currentAppId != null) {
-                    FlintWebAppSession webAppSession = sessions.get(currentAppId);
+                if (Flint.FlintApi.getApplicationStatus(mApiClient) != null
+                        && currentAppId != null) {
+                    FlintWebAppSession webAppSession = sessions
+                            .get(currentAppId);
 
                     webAppSession.connect(null);
                 }
-            }
-            else {
+            } else {
                 connected = true;
 
                 reportConnected(true);
@@ -1029,23 +1204,26 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
                 }
             }
         }
-        
+
         @Override
         public void onConnectionFailed(final ConnectionResult result) {
-            Log.d("Connect SDK", "ConnectionFailedListener.onConnectionFailed " + (result != null ? result: ""));
+            Log.d("Connect SDK", "ConnectionFailedListener.onConnectionFailed "
+                    + (result != null ? result : ""));
 
             detachMediaPlayer();
             connected = false;
             mWaitingForReconnect = false;
             mApiClient = null;
 
-
             Util.runOnUI(new Runnable() {
 
                 @Override
                 public void run() {
                     if (listener != null) {
-                        ServiceCommandError error = new ServiceCommandError(result.getErrorCode(), "Failed to connect to Matchstick device", result);
+                        ServiceCommandError error = new ServiceCommandError(
+                                result.getErrorCode(),
+                                "Failed to connect to Matchstick device",
+                                result);
 
                         listener.onConnectionFailure(FlintService.this, error);
                     }
@@ -1067,16 +1245,19 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
             Status status = result.getStatus();
 
             if (status.isSuccess()) {
-                ApplicationMetadata applicationMetadata = result.getApplicationMetadata();
-                currentAppId = APPLICATION_URL; //applicationMetadata.getApplicationId();
+                ApplicationMetadata applicationMetadata = result
+                        .getApplicationMetadata();
+                currentAppId = APPLICATION_URL; // applicationMetadata.getApplicationId();
 
-                LaunchSession launchSession = LaunchSession.launchSessionForAppId(currentAppId);
-//                launchSession.setAppName(applicationMetadata.getName());
-//                launchSession.setSessionId(result.getSessionId());
+                LaunchSession launchSession = LaunchSession
+                        .launchSessionForAppId(currentAppId);
+                // launchSession.setAppName(applicationMetadata.getName());
+                // launchSession.setSessionId(result.getSessionId());
                 launchSession.setSessionType(LaunchSessionType.WebApp);
                 launchSession.setService(FlintService.this);
 
-                FlintWebAppSession webAppSession = new FlintWebAppSession(launchSession, FlintService.this);
+                FlintWebAppSession webAppSession = new FlintWebAppSession(
+                        launchSession, FlintService.this);
                 webAppSession.setMetadata(applicationMetadata);
 
                 sessions.put(currentAppId, webAppSession);
@@ -1086,10 +1267,10 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
                 }
 
                 launchingAppId = null;
-            }
-            else {
+            } else {
                 if (listener != null) {
-                    listener.onFailure(new ServiceCommandError(status.getStatusCode(), status.getStatusMessage(), status));
+                    listener.onFailure(new ServiceCommandError(status
+                            .getStatusCode(), status.getStatusMessage(), status));
                 }
             }
         }
@@ -1098,11 +1279,13 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     @Override
     public void getPlayState(PlayStateListener listener) {
         if (mMediaPlayer != null && mMediaPlayer.getMediaStatus() != null) {
-            PlayStateStatus status = PlayStateStatus.convertPlayerStateToPlayStateStatus(mMediaPlayer.getMediaStatus().getPlayerState());
+            PlayStateStatus status = PlayStateStatus
+                    .convertPlayerStateToPlayStateStatus(mMediaPlayer
+                            .getMediaStatus().getPlayerState());
             Util.postSuccess(listener, status);
-        }
-        else {
-            Util.postError(listener, new ServiceCommandError(0, "There is no media currently available", null));
+        } else {
+            Util.postError(listener, new ServiceCommandError(0,
+                    "There is no media currently available", null));
         }
     }
 
@@ -1110,9 +1293,9 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
         return mApiClient;
     }
 
-    //////////////////////////////////////////////////
-    //      Device Service Methods
-    //////////////////////////////////////////////////
+    // ////////////////////////////////////////////////
+    // Device Service Methods
+    // ////////////////////////////////////////////////
     @Override
     public boolean isConnectable() {
         return true;
@@ -1124,8 +1307,10 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     }
 
     @Override
-    public ServiceSubscription<PlayStateListener> subscribePlayState(PlayStateListener listener) {
-        URLServiceSubscription<PlayStateListener> request = new URLServiceSubscription<PlayStateListener>(this, PLAY_STATE, null, null);
+    public ServiceSubscription<PlayStateListener> subscribePlayState(
+            PlayStateListener listener) {
+        URLServiceSubscription<PlayStateListener> request = new URLServiceSubscription<PlayStateListener>(
+                this, PLAY_STATE, null, null);
         request.addListener(listener);
         addSubscription(request);
 
@@ -1152,8 +1337,7 @@ public class FlintService extends DeviceService implements MediaPlayer, MediaCon
     private void runCommand(ConnectionListener connectionListener) {
         if (mApiClient != null && mApiClient.isConnected()) {
             connectionListener.onConnected();
-        }
-        else {
+        } else {
             connect();
             commandQueue.add(connectionListener);
         }

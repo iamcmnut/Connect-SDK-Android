@@ -21,6 +21,7 @@
 package com.connectsdk.device;
 
 import android.content.Context;
+import android.util.Log;
 import android.widget.ListView;
 
 import com.connectsdk.core.Util;
@@ -57,12 +58,16 @@ public class DevicePickerListView extends ListView implements DiscoveryManagerLi
             @Override
             public void run() {
                 int index = -1;
+                
+                Log.e("CONNECTSDK", "count[" + pickerAdapter.getCount() + "][" + device.getFriendlyName() + "]ip[" + device.getIpAddress() + "]");
+                
                 for (int i = 0; i < pickerAdapter.getCount(); i++) {
                     ConnectableDevice d = pickerAdapter.getItem(i);
 
                     String newDeviceName = device.getFriendlyName();
                     String dName = d.getFriendlyName();
 
+                    
                     if (newDeviceName == null) {
                         newDeviceName = device.getModelName();
                     }
@@ -70,8 +75,11 @@ public class DevicePickerListView extends ListView implements DiscoveryManagerLi
                     if (dName == null) {
                         dName = d.getModelName();
                     }
-
-                    if (d.getIpAddress().equals(device.getIpAddress())) {
+                    
+                    Log.e("CONNECTSDK", "onDeviceAdded: newDeviceName[" + newDeviceName + "]dName[" + dName + "]");
+                    
+                    if (d.getIpAddress().equals(device.getIpAddress()) && newDeviceName.equals(dName)) {
+                        Log.e("CONNECTSDK", "dName:" + dName + " newDeviceName:" + newDeviceName);
                         pickerAdapter.remove(d);
                         pickerAdapter.insert(device, i);
                         return;

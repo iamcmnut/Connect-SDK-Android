@@ -1,5 +1,5 @@
 /*
- * CastDiscoveryProvider
+ * FlintDiscoveryProvider
  * Connect SDK
  * 
  * Copyright (c) 2014 LG Electronics.
@@ -20,26 +20,6 @@
 
 package com.connectsdk.discovery.provider;
 
-import android.content.Context;
-import android.os.Handler;
-import android.os.Looper;
-import android.support.v7.media.MediaRouteSelector;
-import android.support.v7.media.MediaRouter;
-import android.support.v7.media.MediaRouter.RouteInfo;
-import android.util.Log;
-
-import com.connectsdk.core.Util;
-import com.connectsdk.discovery.DiscoveryProvider;
-import com.connectsdk.discovery.DiscoveryProviderListener;
-import com.connectsdk.service.FlintService;
-import com.connectsdk.service.config.FlintServiceDescription;
-import com.connectsdk.service.config.ServiceDescription;
-
-import org.json.JSONObject;
-
-import tv.matchstick.flint.FlintDevice;
-import tv.matchstick.flint.FlintMediaControlIntent;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -47,6 +27,23 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import android.content.Context;
+import android.support.v7.media.MediaRouteSelector;
+import android.support.v7.media.MediaRouter;
+import android.support.v7.media.MediaRouter.RouteInfo;
+import android.util.Log;
+
+import com.connectsdk.core.Util;
+import com.connectsdk.discovery.DiscoveryFilter;
+import com.connectsdk.discovery.DiscoveryProvider;
+import com.connectsdk.discovery.DiscoveryProviderListener;
+import com.connectsdk.service.FlintService;
+import com.connectsdk.service.command.ServiceCommandError;
+import com.connectsdk.service.config.FlintServiceDescription;
+import com.connectsdk.service.config.ServiceDescription;
+import tv.matchstick.flint.FlintDevice;
+import tv.matchstick.flint.FlintMediaControlIntent;
 
 public class FlintDiscoveryProvider implements DiscoveryProvider {
     private MediaRouter mMediaRouter;
@@ -63,17 +60,13 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
     private Timer addCallbackTimer;
     private Timer removeCallbackTimer;
 
+    boolean isRunning = false;
+
     public FlintDiscoveryProvider(Context context) {
-
         mMediaRouter = createMediaRouter(context);
-        mMediaRouteSelector = new MediaRouteSelector.Builder()
-                .addControlCategory(
-                        FlintMediaControlIntent.categoryForFlint("")).build();
-
         mMediaRouterCallback = new MediaRouterCallback();
 
-        foundServices = new ConcurrentHashMap<String, ServiceDescription>(8,
-                0.75f, 2);
+        foundServices = new ConcurrentHashMap<String, ServiceDescription>(8, 0.75f, 2);
         serviceListeners = new CopyOnWriteArrayList<DiscoveryProviderListener>();
     }
 
@@ -83,7 +76,24 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
 
     @Override
     public void start() {
-        stop();
+        if (isRunning) 
+            return;
+
+        isRunning = true;
+
+        if (mMediaRouteSelector == null) {
+            try {
+                mMediaRouteSelector = new MediaRouteSelector.Builder()
+                .addControlCategory(FlintMediaControlIntent.categoryForFlint(FlintService.getApplicationID()))
+                .build();
+            } catch (IllegalArgumentException e) {
+                Log.w("Connect SDK", "Invalid application ID: " + FlintService.getApplicationID());
+                for (DiscoveryProviderListener listener : serviceListeners) {
+                    listener.onServiceDiscoveryFailed(this, new ServiceCommandError(0, "Invalid application ID: " + FlintService.getApplicationID(), null));
+                }
+                return;
+            }
+        }
 
         addCallbackTimer = new Timer();
         addCallbackTimer.schedule(new TimerTask() {
@@ -99,7 +109,7 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
 
             @Override
             public void run() {
-                new Handler(Looper.getMainLooper()).post(new Runnable() {
+                Util.runOnUI(new Runnable() {
 
                     @Override
                     public void run() {
@@ -131,8 +141,7 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
                     @Override
                     public void run() {
                         for (DiscoveryProviderListener listener : serviceListeners) {
-                            listener.onServiceRemoved(
-                                    FlintDiscoveryProvider.this, service);
+                            listener.onServiceRemoved(FlintDiscoveryProvider.this, service);
                         }
                     }
                 });
@@ -142,29 +151,25 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
                 foundServices.remove(key);
         }
 
-        new Handler(Looper.getMainLooper()).post(new Runnable() {
-
-            @Override
-            public void run() {
-                mMediaRouter.addCallback(mMediaRouteSelector,
-                        mMediaRouterCallback,
-                        MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
-            }
-        });
+        rescan();
     }
 
     @Override
     public void stop() {
+        isRunning = false;
+
         if (addCallbackTimer != null) {
             addCallbackTimer.cancel();
+            addCallbackTimer = null;
         }
 
         if (removeCallbackTimer != null) {
             removeCallbackTimer.cancel();
+            removeCallbackTimer = null;
         }
 
         if (mMediaRouter != null) {
-            new Handler(Looper.getMainLooper()).post(new Runnable() {
+            Util.runOnUI(new Runnable() {
 
                 @Override
                 public void run() {
@@ -175,9 +180,26 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
     }
 
     @Override
+    public void restart() {
+        stop();
+        start();
+    }
+
+    @Override
     public void reset() {
         stop();
         foundServices.clear();
+    }
+
+    @Override
+    public void rescan() {
+        Util.runOnUI(new Runnable() {
+
+            @Override
+            public void run() {
+                mMediaRouter.addCallback(mMediaRouteSelector, mMediaRouterCallback, MediaRouter.CALLBACK_FLAG_PERFORM_ACTIVE_SCAN);
+            }
+        });
     }
 
     @Override
@@ -191,12 +213,13 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
     }
 
     @Override
-    public void addDeviceFilter(JSONObject parameters) {
-    }
+    public void addDeviceFilter(DiscoveryFilter filter) {}
 
     @Override
-    public void removeDeviceFilter(JSONObject parameters) {
-    }
+    public void removeDeviceFilter(DiscoveryFilter filter) {}
+
+    @Override
+    public void setFilters(java.util.List<DiscoveryFilter> filters) {};
 
     @Override
     public boolean isEmpty() {
@@ -208,9 +231,9 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
         @Override
         public void onRouteAdded(MediaRouter router, RouteInfo route) {
             super.onRouteAdded(router, route);
-            FlintDevice castDevice = FlintDevice.getFromBundle(route
-                    .getExtras());
-            String uuid = castDevice.getDeviceId();
+
+            FlintDevice flintDevice = FlintDevice.getFromBundle(route.getExtras());
+            String uuid = flintDevice.getDeviceId();
 
             ServiceDescription foundService = foundServices.get(uuid);
 
@@ -218,25 +241,23 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
             boolean listUpdateFlag = false;
 
             if (isNew) {
-                foundService = new FlintServiceDescription(FlintService.ID, uuid,
-                        castDevice.getIpAddress().getHostAddress(), castDevice);
-                foundService.setFriendlyName(castDevice.getFriendlyName());
-                foundService.setModelName(castDevice.getModelName());
-                foundService.setModelNumber(castDevice.getDeviceVersion());
+                foundService = new FlintServiceDescription(FlintService.ID, uuid, flintDevice.getIpAddress().getHostAddress(), flintDevice);
+                foundService.setFriendlyName(flintDevice.getFriendlyName());
+                foundService.setModelName(flintDevice.getModelName());
+                foundService.setModelNumber(flintDevice.getDeviceVersion());
                 foundService.setModelDescription(route.getDescription());
-                foundService.setPort(castDevice.getServicePort());
+                foundService.setPort(flintDevice.getServicePort());
                 foundService.setServiceID(FlintService.ID);
 
                 listUpdateFlag = true;
-            } else {
-                if (!foundService.getFriendlyName().equals(
-                        castDevice.getFriendlyName())) {
-                    foundService.setFriendlyName(castDevice.getFriendlyName());
+            }
+            else {
+                if (!foundService.getFriendlyName().equals(flintDevice.getFriendlyName())) {
+                    foundService.setFriendlyName(flintDevice.getFriendlyName());
                     listUpdateFlag = true;
                 }
 
-                ((FlintServiceDescription) foundService)
-                        .setCastDevice(castDevice);
+                ((FlintServiceDescription)foundService).setFlintDevice(flintDevice);
             }
 
             if (foundService != null)
@@ -245,9 +266,8 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
             foundServices.put(uuid, foundService);
 
             if (listUpdateFlag) {
-                for (DiscoveryProviderListener listenter : serviceListeners) {
-                    listenter.onServiceAdded(FlintDiscoveryProvider.this,
-                            foundService);
+                for (DiscoveryProviderListener listenter: serviceListeners) {
+                    listenter.onServiceAdded(FlintDiscoveryProvider.this, foundService);
                 }
             }
         }
@@ -256,9 +276,8 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
         public void onRouteChanged(MediaRouter router, RouteInfo route) {
             super.onRouteChanged(router, route);
 
-            FlintDevice castDevice = FlintDevice.getFromBundle(route
-                    .getExtras());
-            String uuid = castDevice.getDeviceId();
+            FlintDevice flintDevice = FlintDevice.getFromBundle(route.getExtras());
+            String uuid = flintDevice.getDeviceId();
 
             ServiceDescription foundService = foundServices.get(uuid);
 
@@ -266,18 +285,15 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
             boolean listUpdateFlag = false;
 
             if (!isNew) {
-                foundService.setIpAddress(castDevice.getIpAddress()
-                        .getHostAddress());
-                foundService.setModelName(castDevice.getModelName());
-                foundService.setModelNumber(castDevice.getDeviceVersion());
+                foundService.setIpAddress(flintDevice.getIpAddress().getHostAddress());
+                foundService.setModelName(flintDevice.getModelName());
+                foundService.setModelNumber(flintDevice.getDeviceVersion());
                 foundService.setModelDescription(route.getDescription());
-                foundService.setPort(castDevice.getServicePort());
-                ((FlintServiceDescription) foundService)
-                        .setCastDevice(castDevice);
+                foundService.setPort(flintDevice.getServicePort());
+                ((FlintServiceDescription)foundService).setFlintDevice(flintDevice);
 
-                if (!foundService.getFriendlyName().equals(
-                        castDevice.getFriendlyName())) {
-                    foundService.setFriendlyName(castDevice.getFriendlyName());
+                if (!foundService.getFriendlyName().equals(flintDevice.getFriendlyName())) {
+                    foundService.setFriendlyName(flintDevice.getFriendlyName());
                     listUpdateFlag = true;
                 }
 
@@ -286,9 +302,8 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
                 foundServices.put(uuid, foundService);
 
                 if (listUpdateFlag) {
-                    for (DiscoveryProviderListener listenter : serviceListeners) {
-                        listenter.onServiceAdded(FlintDiscoveryProvider.this,
-                                foundService);
+                    for (DiscoveryProviderListener listenter: serviceListeners) {
+                        listenter.onServiceAdded(FlintDiscoveryProvider.this, foundService);
                     }
                 }
             }
@@ -297,41 +312,18 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
         @Override
         public void onRoutePresentationDisplayChanged(MediaRouter router,
                 RouteInfo route) {
-            Log.d(Util.T,
-                    "onRoutePresentationDisplayChanged: [" + route.getName()
-                            + "] [" + route.getDescription() + "]");
+            Log.d(Util.T, "onRoutePresentationDisplayChanged: [" + route.getName() + "] [" + route.getDescription() + "]");
             super.onRoutePresentationDisplayChanged(router, route);
         }
 
         @Override
         public void onRouteRemoved(MediaRouter router, RouteInfo route) {
             super.onRouteRemoved(router, route);
-
-            // CastDevice castDevice =
-            // CastDevice.getFromBundle(route.getExtras());
-            // String uuid = castDevice.getDeviceId();
-            //
-            // final ServiceDescription service = foundServices.get(uuid);
-            //
-            // if (service != null) {
-            // Util.runOnUI(new Runnable() {
-            //
-            // @Override
-            // public void run() {
-            // for (DiscoveryProviderListener listener : serviceListeners) {
-            // listener.onServiceRemoved(CastDiscoveryProvider.this, service);
-            // }
-            // }
-            // });
-            //
-            // foundServices.remove(uuid);
-            // }
         }
 
         @Override
         public void onRouteVolumeChanged(MediaRouter router, RouteInfo route) {
-            Log.d(Util.T, "onRouteVolumeChanged: [" + route.getName() + "] ["
-                    + route.getDescription() + "]");
+            Log.d(Util.T, "onRouteVolumeChanged: [" + route.getName() + "] [" + route.getDescription() + "]");
             super.onRouteVolumeChanged(router, route);
         }
 

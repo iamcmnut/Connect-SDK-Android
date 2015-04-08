@@ -1,5 +1,51 @@
 # Connect SDK Android Changelog
 
+## 1.4.3 -- 23 Mar 2015
+
+- Reverted Roku 6.1 fix for playing video as Roku has fixed its media player
+- Added proper encoding of special characters for metadata in DLNAService
+- Added getPlayState implementation into AirPlayService
+- Implemeted sending number key for NetcastTV
+- Miscellaneous bug fixes
+
+- [See commits between 1.4.2 and 1.4.3](https://github.com/ConnectSDK/Connect-SDK-Android/compare/1.4.2...1.4.3)
+
+[View files at version 1.4.3](https://github.com/ConnectSDK/Connect-SDK-Android/tree/1.4.3)
+
+## 1.4.2 -- 10 Feb 2015
+
+- Fixed saving service configuration
+- Fixed video beaming for Roku firmware 6.1
+- Added playlist capabilities
+- Significantly improved SSDP classes
+- Improved usage of CPU for WebOS service
+- Added support for Xbox one and Sonos speakers
+- Added support for Android Studio 1.0
+- [See commits between 1.4.1 and 1.4.2](https://github.com/ConnectSDK/Connect-SDK-Android/compare/1.4.1...1.4.2)
+
+[View files at version 1.4.2](https://github.com/ConnectSDK/Connect-SDK-Android/tree/1.4.2)
+
+## 1.4.1 -- 18 Dec 2014
+
+- Fixed connection failure event
+- Added new unit tests
+- [See commits between 1.4.0 and 1.4.1](https://github.com/ConnectSDK/Connect-SDK-Android/compare/1.4.0...1.4.1)
+
+[View files at version 1.4.1](https://github.com/ConnectSDK/Connect-SDK-Android/tree/1.4.1)
+
+## 1.4.0 -- 3 Dec 2014
+
+- Modularized project to allow easy exclusion of modules that have heavy and/or external dependencies
+- Improved support for DLNA devices
+  - DLNA volume control subscriptions
+  - DLNA play state subscriptions
+  - DLNA media info
+- Unit tests for the discovery services providers
+- Miscellaneous bug fixes
+- [See commits between 1.3.2 and 1.4.0](https://github.com/ConnectSDK/Connect-SDK-Android/compare/1.3.2...1.4.0)
+
+[View files at version 1.4.0](https://github.com/ConnectSDK/Connect-SDK-Android/tree/1.4.0)
+
 ## 1.3.2 -- 6 Aug 2014
 
 - Added launchYouTube(String contentId, float startTime, AppLaunchListener listener) method to Launcher capability

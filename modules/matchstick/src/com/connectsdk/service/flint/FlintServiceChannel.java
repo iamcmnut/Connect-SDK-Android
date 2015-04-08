@@ -1,5 +1,5 @@
 /*
- * CastServiceChannel
+ * FlintServiceChannel
  * Connect SDK
  * 
  * Copyright (c) 2014 LG Electronics.
@@ -22,49 +22,48 @@ package com.connectsdk.service.flint;
 
 import com.connectsdk.core.Util;
 import com.connectsdk.service.sessions.FlintWebAppSession;
+import tv.matchstick.flint.Flint;
+import tv.matchstick.flint.FlintDevice;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import tv.matchstick.flint.Flint;
-import tv.matchstick.flint.FlintDevice;
-
 public class FlintServiceChannel implements Flint.MessageReceivedCallback{
-	String webAppId;
-	FlintWebAppSession session;
-	
-	public FlintServiceChannel(String webAppId, FlintWebAppSession session) {
-		this.webAppId = webAppId;
-		this.session = session;
-	}
-	
-	public String getNamespace() {
-		return "urn:x-cast:com.connectsdk";
-	}
+    String webAppId;
+    FlintWebAppSession session;
 
-	@Override
-	public void onMessageReceived(FlintDevice castDevice, String namespace, final String message) {
-		if (session.getWebAppSessionListener() == null)
-			return;
-		
-		JSONObject messageJSON = null;
-		
-		try {
-			messageJSON = new JSONObject(message);
-		} catch (JSONException e) { }
-		
-		final JSONObject mMessage = messageJSON;
-		
-		Util.runOnUI(new Runnable() {
-			
-			@Override
-			public void run() {
-				if (mMessage == null) {
-					session.getWebAppSessionListener().onReceiveMessage(session, message);
-				} else {
-					session.getWebAppSessionListener().onReceiveMessage(session, mMessage);
-				}
-			}
-		});
-	}
+    public FlintServiceChannel(String webAppId, FlintWebAppSession session) {
+        this.webAppId = webAppId;
+        this.session = session;
+    }
+
+    public String getNamespace() {
+        return "urn:x-cast:com.connectsdk";
+    }
+
+    @Override
+    public void onMessageReceived(FlintDevice flintDevice, String namespace, final String message) {
+        if (session.getWebAppSessionListener() == null)
+            return;
+
+        JSONObject messageJSON = null;
+
+        try {
+            messageJSON = new JSONObject(message);
+        } catch (JSONException e) { }
+
+        final JSONObject mMessage = messageJSON;
+
+        Util.runOnUI(new Runnable() {
+
+            @Override
+            public void run() {
+                if (mMessage == null) {
+                    session.getWebAppSessionListener().onReceiveMessage(session, message);
+                } else {
+                    session.getWebAppSessionListener().onReceiveMessage(session, mMessage);
+                }
+            }
+        });
+    }
 }

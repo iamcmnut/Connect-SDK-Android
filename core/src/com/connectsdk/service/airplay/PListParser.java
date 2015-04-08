@@ -20,21 +20,34 @@
 
 package com.connectsdk.service.airplay;
 
-import java.io.IOException;
-import java.io.InputStream;
+import android.util.Log;
+import android.util.Xml;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserException;
 
-import android.util.Xml;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.io.StringReader;
 
 public class PListParser {
     private static final String ns = null;
-    
+
+    public JSONObject parse(String text) throws XmlPullParserException, IOException, JSONException {
+        XmlPullParser parser = Xml.newPullParser();
+        parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
+        Reader stream = new StringReader(text);
+        parser.setInput(stream);
+        parser.nextTag();
+        return readPlist(parser);
+    }
+
     public JSONObject parse(InputStream in) throws XmlPullParserException, IOException, JSONException {
-    	try {
+        try {
             XmlPullParser parser = Xml.newPullParser();
             parser.setFeature(XmlPullParser.FEATURE_PROCESS_NAMESPACES, false);
             parser.setInput(in, null);
@@ -44,7 +57,7 @@ public class PListParser {
             in.close();
         }
     }
-    
+
     private JSONObject readPlist(XmlPullParser parser) throws XmlPullParserException, IOException, JSONException {
         JSONObject plist = null;
 
@@ -53,24 +66,24 @@ public class PListParser {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 continue;
             }
-            
+
             String name = parser.getName();
 
             if (name.equals("dict")) {
-            	plist = readDict(parser);
+                plist = readDict(parser);
             }
         }  
-        
+
         return plist;
     }
-    
+
     public JSONObject readDict(XmlPullParser parser) throws IOException, XmlPullParserException, JSONException {
         JSONObject plist = new JSONObject();
-        
+
         parser.require(XmlPullParser.START_TAG, ns, "dict");
-        
+
         String key = null;
-        
+
         while (parser.next() != XmlPullParser.END_TAG) {
             if (parser.getEventType() != XmlPullParser.START_TAG) {
                 continue;
@@ -78,40 +91,63 @@ public class PListParser {
             String name = parser.getName();
 
             if (name.equals("key")) {
-            	key = readKey(parser);
+                key = readKey(parser);
+                Log.d("", "plist " + key);
             }
             else if (key != null) {
-            	if (name.equals("data")) {
-            		plist.put(key, readData(parser));
-            	}
-            	else if (name.equals("integer")) {
-            		plist.put(key, readInteger(parser));
-            	}
-            	else if (name.equals("string")) {
-            		plist.put(key, readString(parser));
-            	}
-            	else if (name.equals("real")) {
-            		plist.put(key, readReal(parser));
-            	}
-            	else if (name.equals("true") || name.equals("false")) {
-            		plist.put(key, Boolean.valueOf(name));
-            		skip(parser);
-            	}
+                if (name.equals("data")) {
+                    plist.put(key, readData(parser));
+                }
+                else if (name.equals("integer")) {
+                    plist.put(key, readInteger(parser));
+                }
+                else if (name.equals("string")) {
+                    plist.put(key, readString(parser));
+                }
+                else if (name.equals("real")) {
+                    plist.put(key, readReal(parser));
+                }
+                else if (name.equals("array")) {
+                    plist.put(key, readArray(parser));
+                }
+                else if (name.equals("dict")) {
+                    plist.put(key, readDict(parser));
+                }
+                else if (name.equals("true") || name.equals("false")) {
+                    plist.put(key, Boolean.valueOf(name));
+                    skip(parser);
+                }
 
-            	key = null;
+                key = null;
             }
         }
 
         return plist;
     }
-    
+
+    private JSONArray readArray(XmlPullParser parser) throws IOException, XmlPullParserException, JSONException {
+        JSONArray plist = new JSONArray();
+        parser.require(XmlPullParser.START_TAG, ns, "array");
+
+        while (parser.next() != XmlPullParser.END_TAG) {
+            if (parser.getEventType() != XmlPullParser.START_TAG) {
+                continue;
+            }
+            String name = parser.getName();
+            if (name.equals("dict")) {
+                plist.put(readDict(parser));
+            }
+        }
+        return plist;
+    }
+
     private String readKey(XmlPullParser parser) throws IOException, XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, ns, "key");
         String key = readText(parser);
         parser.require(XmlPullParser.END_TAG, ns, "key");
         return key;
     }
-    
+
     private String readData(XmlPullParser parser) throws IOException, XmlPullParserException {
         parser.require(XmlPullParser.START_TAG, ns, "data");
         String value = readText(parser);
@@ -148,7 +184,7 @@ public class PListParser {
         }
         return result;
     }
-    
+
     private void skip(XmlPullParser parser) throws XmlPullParserException, IOException {
         if (parser.getEventType() != XmlPullParser.START_TAG) {
             throw new IllegalStateException();
@@ -164,5 +200,5 @@ public class PListParser {
                 break;
             }
         }
-     }
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * CastWebAppSession
+ * FlintWebAppSession
  * Connect SDK
  * 
  * Copyright (c) 2014 LG Electronics.
@@ -30,19 +30,18 @@ import com.connectsdk.service.capability.listeners.ResponseListener;
 import com.connectsdk.service.command.ServiceCommandError;
 import com.connectsdk.service.command.URLServiceSubscription;
 import com.connectsdk.service.flint.FlintServiceChannel;
-
-import org.json.JSONObject;
-
 import tv.matchstick.flint.ApplicationMetadata;
 import tv.matchstick.flint.Flint;
 import tv.matchstick.flint.ResultCallback;
 import tv.matchstick.flint.Status;
 
+import org.json.JSONObject;
+
 import java.io.IOException;
 
 public class FlintWebAppSession extends WebAppSession {
     private FlintService service;
-    private FlintServiceChannel castServiceChannel;
+    private FlintServiceChannel flintServiceChannel;
     private ApplicationMetadata metadata;
 
     public FlintWebAppSession(LaunchSession launchSession, DeviceService service) {
@@ -53,23 +52,22 @@ public class FlintWebAppSession extends WebAppSession {
 
     @Override
     public void connect(final ResponseListener<Object> listener) {
-        if (castServiceChannel != null) {
+        if (flintServiceChannel != null) {
             disconnectFromWebApp();
         }
 
-        castServiceChannel = new FlintServiceChannel(launchSession.getAppId(),
-                this);
+        flintServiceChannel = new FlintServiceChannel(launchSession.getAppId(), this);
 
         try {
             Flint.FlintApi.setMessageReceivedCallbacks(service.getApiClient(),
-                    castServiceChannel.getNamespace(), castServiceChannel);
+                    flintServiceChannel.getNamespace(),
+                    flintServiceChannel);
 
             Util.postSuccess(listener, null);
         } catch (IOException e) {
-            castServiceChannel = null;
+            flintServiceChannel = null;
 
-            Util.postError(listener, new ServiceCommandError(0,
-                    "Failed to create channel", null));
+            Util.postError(listener, new ServiceCommandError(0, "Failed to create channel", null));
         }
     }
 
@@ -79,13 +77,12 @@ public class FlintWebAppSession extends WebAppSession {
     }
 
     public void disconnectFromWebApp() {
-        if (castServiceChannel == null)
+        if (flintServiceChannel == null) 
             return;
 
         try {
-            Flint.FlintApi.removeMessageReceivedCallbacks(
-                    service.getApiClient(), castServiceChannel.getNamespace());
-            castServiceChannel = null;
+            Flint.FlintApi.removeMessageReceivedCallbacks(service.getApiClient(), flintServiceChannel.getNamespace());
+            flintServiceChannel = null;
         } catch (IOException e) {
             Log.e("Connect SDK", "Exception while removing application", e);
         }
@@ -94,62 +91,49 @@ public class FlintWebAppSession extends WebAppSession {
     }
 
     public void handleAppClose() {
-        for (URLServiceSubscription<?> subscription : service
-                .getSubscriptions()) {
+        for (URLServiceSubscription<?> subscription: service.getSubscriptions()) {
             if (subscription.getTarget().equalsIgnoreCase("PlayState")) {
                 for (int i = 0; i < subscription.getListeners().size(); i++) {
                     @SuppressWarnings("unchecked")
-                    ResponseListener<Object> listener = (ResponseListener<Object>) subscription
-                            .getListeners().get(i);
+                    ResponseListener<Object> listener = (ResponseListener<Object>) subscription.getListeners().get(i);
                     Util.postSuccess(listener, PlayStateStatus.Idle);
                 }
             }
         }
 
-        if (getWebAppSessionListener() != null) {
+        if (getWebAppSessionListener() != null) { 
             getWebAppSessionListener().onWebAppSessionDisconnect(this);
         }
     }
 
     @Override
-    public void sendMessage(String message,
-            final ResponseListener<Object> listener) {
+    public void sendMessage(String message, final ResponseListener<Object> listener) {
         if (message == null) {
-            Util.postError(listener, new ServiceCommandError(0,
-                    "Cannot send null message", null));
+            Util.postError(listener, new ServiceCommandError(0, "Cannot send null message", null));
             return;
         }
 
-        if (castServiceChannel == null) {
-            Util.postError(
-                    listener,
-                    new ServiceCommandError(
-                            0,
-                            "Cannot send a message to the web app without first connecting",
-                            null));
+        if (flintServiceChannel == null) {
+            Util.postError(listener, new ServiceCommandError(0, "Cannot send a message to the web app without first connecting", null));
             return;
         }
 
-        Flint.FlintApi.sendMessage(service.getApiClient(),
-                castServiceChannel.getNamespace(), message).setResultCallback(
-                new ResultCallback<Status>() {
+        Flint.FlintApi.sendMessage(service.getApiClient(), flintServiceChannel.getNamespace(), message).setResultCallback(new ResultCallback<Status>() {
 
-                    @Override
-                    public void onResult(Status result) {
-                        if (result.isSuccess()) {
-                            Util.postSuccess(listener, null);
-                        } else {
-                            Util.postError(listener, new ServiceCommandError(
-                                    result.getStatusCode(), result.toString(),
-                                    result));
-                        }
-                    }
-                });
+            @Override
+            public void onResult(Status result) {
+                if (result.isSuccess()) {
+                    Util.postSuccess(listener, null);
+                }
+                else {
+                    Util.postError(listener, new ServiceCommandError(result.getStatusCode(), result.toString(), result));
+                }
+            }
+        });
     }
 
     @Override
-    public void sendMessage(JSONObject message,
-            ResponseListener<Object> listener) {
+    public void sendMessage(JSONObject message, ResponseListener<Object> listener) {
         sendMessage(message.toString(), listener);
     }
 
@@ -172,16 +156,12 @@ public class FlintWebAppSession extends WebAppSession {
     }
 
     @Override
-    public void playMedia(String url, String mimeType, String title,
-            String description, String iconSrc, boolean shouldLoop,
-            MediaPlayer.LaunchListener listener) {
-        service.playMedia(url, mimeType, title, description, iconSrc,
-                shouldLoop, listener);
+    public void playMedia(String url, String mimeType, String title, String description, String iconSrc, boolean shouldLoop, MediaPlayer.LaunchListener listener) {
+        service.playMedia(url, mimeType, title, description, iconSrc, shouldLoop, listener);
     }
 
     @Override
-    public void closeMedia(LaunchSession launchSession,
-            ResponseListener<Object> listener) {
+    public void closeMedia(LaunchSession launchSession, ResponseListener<Object> listener) {
         close(listener);
     }
 

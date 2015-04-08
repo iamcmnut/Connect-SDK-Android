@@ -23,19 +23,19 @@ package com.connectsdk.service.config;
 import tv.matchstick.flint.FlintDevice;
 
 public class FlintServiceDescription extends ServiceDescription {
-	FlintDevice flintDevice;
-	
-	public FlintServiceDescription(String serviceFilter, String UUID, String ipAddress, FlintDevice castDevice) {
-		super(serviceFilter, UUID, ipAddress);
-		this.flintDevice = castDevice;
-	}
+    FlintDevice flintDevice;
 
-	public FlintDevice getCastDevice() {
-		return flintDevice;
-	}
+    public FlintServiceDescription(String serviceFilter, String UUID, String ipAddress, FlintDevice flintDevice) {
+        super(serviceFilter, UUID, ipAddress);
+        this.flintDevice = flintDevice;
+    }
 
-	public void setCastDevice(FlintDevice castDevice) {
-		this.flintDevice = castDevice;
-	}
+    public FlintDevice getFlintDevice() {
+        return flintDevice;
+    }
+
+    public void setFlintDevice(FlintDevice flintDevice) {
+        this.flintDevice = flintDevice;
+    }
 
 }

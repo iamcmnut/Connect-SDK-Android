@@ -84,7 +84,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
     // @cond INTERNAL
 
     public static final String ID = "Matchstick";
-    public final static String TAG = "Connect SDK";
+    public final static String TAG = "FlintService";
 
     public final static String PLAY_STATE = "PlayState";
     public final static String Flint_SERVICE_VOLUME_SUBSCRIPTION_NAME = "volume";
@@ -634,8 +634,10 @@ public class FlintService extends DeviceService implements MediaPlayer,
             public void onConnected() {
                 boolean relaunchIfRunning = false;
 
-                if (Flint.FlintApi.getApplicationStatus(mApiClient) == null
-                        || (!mediaAppId.equals(currentAppId)))
+                Log.e(TAG, "playMedia: status[" + Flint.FlintApi.getApplicationStatus(mApiClient) + "]currentAppId[" + currentAppId + "]mediaAppId[" + mediaAppId + "]");
+//                if (Flint.FlintApi.getApplicationStatus(mApiClient) == null
+//                        || (!mediaAppId.equals(currentAppId)))
+              if (!mediaAppId.equals(currentAppId))
                     relaunchIfRunning = true;
 
                 Flint.FlintApi.launchApplication(mApiClient, mediaAppId,
@@ -1167,7 +1169,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
             FlintManager.ConnectionCallbacks {
         @Override
         public void onConnectionSuspended(final int cause) {
-            Log.d("Connect SDK", "ConnectionCallbacks.onConnectionSuspended");
+            Log.d(TAG, "ConnectionCallbacks.onConnectionSuspended");
 
             mWaitingForReconnect = true;
             detachMediaPlayer();
@@ -1175,7 +1177,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
 
         @Override
         public void onConnected(Bundle connectionHint) {
-            Log.d("Connect SDK",
+            Log.d(TAG,
                     "ConnectionCallbacks.onConnected, wasWaitingForReconnect: "
                             + mWaitingForReconnect);
 
@@ -1207,7 +1209,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
 
         @Override
         public void onConnectionFailed(final ConnectionResult result) {
-            Log.d("Connect SDK", "ConnectionFailedListener.onConnectionFailed "
+            Log.d(TAG, "ConnectionFailedListener.onConnectionFailed "
                     + (result != null ? result : ""));
 
             detachMediaPlayer();

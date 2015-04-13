@@ -22,6 +22,7 @@ package com.connectsdk.service;
 
 import android.content.Context;
 import android.text.Html;
+import android.util.Log;
 import android.util.Xml;
 
 import com.connectsdk.core.ImageInfo;
@@ -521,7 +522,6 @@ public class DLNAService extends DeviceService implements PlaylistControl, Media
             @Override
             public void onGetPositionInfoSuccess(String positionInfoXml) {
                 String strDuration = parseData(positionInfoXml, "TrackDuration");
-
                 String trackMetaData = parseData(positionInfoXml, "TrackMetaData");
                 MediaInfo info = DLNAMediaInfoParser.getMediaInfo(trackMetaData);
                 // Check if duration we get not equals 0 or media is image, otherwise wait 1 second and try again
@@ -1275,12 +1275,11 @@ public class DLNAService extends DeviceService implements PlaylistControl, Media
                 String currentVolume = parseData((String) response, "CurrentVolume");
                 int iVolume = 0;
                 try {
-                    Integer.parseInt(currentVolume);
+                    iVolume = Integer.parseInt(currentVolume);
                 } catch (RuntimeException ex) {
                     ex.printStackTrace();
                 }
                 float fVolume = (float) (iVolume / 100.0);
-
                 Util.postSuccess(listener, fVolume);
             }
 

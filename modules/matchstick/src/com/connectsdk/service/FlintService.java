@@ -207,6 +207,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
             commandQueue.clear();
 
         if (mApiClient != null && mApiClient.isConnected()) {
+            Log.e("Flint", "disconnect!leaveApplication!!!");
             Flint.FlintApi.leaveApplication(mApiClient);
             mApiClient.disconnect();
         }
@@ -574,6 +575,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
     private void playMedia(
             final tv.matchstick.flint.MediaInfo mediaInformation,
             final String mediaAppId, final LaunchListener listener) {
+        Log.e(TAG, "playMedia!");
         final ApplicationConnectionResultCallback webAppLaunchCallback = new ApplicationConnectionResultCallback(
                 new LaunchWebAppListener() {
 
@@ -583,6 +585,14 @@ public class FlintService extends DeviceService implements MediaPlayer,
 
                             @Override
                             public void onConnected() {
+                                Log.e(TAG, "playMedia!onConnected!");
+                                
+                                Util.postSuccess(
+                                        listener,
+                                        new MediaLaunchObject(
+                                                webAppSession.launchSession,
+                                                FlintService.this));
+                                
                                 mMediaPlayer
                                         .load(mApiClient, mediaInformation,
                                                 true)
@@ -592,9 +602,12 @@ public class FlintService extends DeviceService implements MediaPlayer,
                                                     @Override
                                                     public void onResult(
                                                             MediaChannelResult result) {
+
                                                         Status status = result
                                                                 .getStatus();
-
+                                                        
+                                                        Log.e(TAG, "mMediaPlayer.load:onResult[" + status);
+                                                        
                                                         if (status.isSuccess()) {
                                                             webAppSession.launchSession
                                                                     .setSessionType(LaunchSessionType.Media);
@@ -652,6 +665,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
     @Override
     public void closeMedia(final LaunchSession launchSession,
             final ResponseListener<Object> listener) {
+        Log.e(TAG, "closeMedia!");
         ConnectionListener connectionListener = new ConnectionListener() {
 
             @Override
@@ -661,6 +675,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
 
                             @Override
                             public void onResult(Status result) {
+                                Log.e(TAG, "closeMedia!onResult:" + result);
                                 if (result.isSuccess()) {
                                     Util.postSuccess(listener, result);
                                 } else {
@@ -1245,7 +1260,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
         @Override
         public void onResult(ApplicationConnectionResult result) {
             Status status = result.getStatus();
-
+            Log.e(TAG, "ApplicationConnectionResultCallback:onResult[" + status + "]");
             if (status.isSuccess()) {
                 ApplicationMetadata applicationMetadata = result
                         .getApplicationMetadata();

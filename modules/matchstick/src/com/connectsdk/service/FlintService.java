@@ -576,6 +576,60 @@ public class FlintService extends DeviceService implements MediaPlayer,
             final tv.matchstick.flint.MediaInfo mediaInformation,
             final String mediaAppId, final LaunchListener listener) {
         Log.e(TAG, "playMedia!");
+        
+        // directly load media file
+        if (mMediaPlayer != null) {
+            ConnectionListener connectionListener = new ConnectionListener() {
+
+                @Override
+                public void onConnected() {
+                    Log.e(TAG, "directly load!");
+
+                    mMediaPlayer
+                            .load(mApiClient, mediaInformation,
+                                    true)
+                            .setResultCallback(
+                                    new ResultCallback<RemoteMediaPlayer.MediaChannelResult>() {
+
+                                        @Override
+                                        public void onResult(
+                                                MediaChannelResult result) {
+
+                                            Status status = result
+                                                    .getStatus();
+                                            
+                                            Log.e(TAG, "mMediaPlayer.load:onResult[" + status);
+                                            
+                                            FlintWebAppSession webAppSession = sessions.get(currentAppId);
+                                            
+                                            //if (status.isSuccess()) {
+                                            if (true) { // does not care about the load status.
+                                                webAppSession.launchSession
+                                                        .setSessionType(LaunchSessionType.Media);
+
+                                                Util.postSuccess(
+                                                        listener,
+                                                        new MediaLaunchObject(
+                                                                webAppSession.launchSession,
+                                                                FlintService.this));
+                                            } else {
+                                                Util.postError(
+                                                        listener,
+                                                        new ServiceCommandError(
+                                                                status.getStatusCode(),
+                                                                status.getStatusMessage(),
+                                                                status));
+                                            }
+                                        }
+                                    });
+                }
+            };
+
+            runCommand(connectionListener);
+            
+            return;
+        }
+        
         final ApplicationConnectionResultCallback webAppLaunchCallback = new ApplicationConnectionResultCallback(
                 new LaunchWebAppListener() {
 
@@ -586,12 +640,8 @@ public class FlintService extends DeviceService implements MediaPlayer,
                             @Override
                             public void onConnected() {
                                 Log.e(TAG, "playMedia!onConnected!");
-                                
-                                Util.postSuccess(
-                                        listener,
-                                        new MediaLaunchObject(
-                                                webAppSession.launchSession,
-                                                FlintService.this));
+
+                                attachMediaPlayer();
                                 
                                 mMediaPlayer
                                         .load(mApiClient, mediaInformation,
@@ -648,6 +698,29 @@ public class FlintService extends DeviceService implements MediaPlayer,
                 boolean relaunchIfRunning = false;
 
                 Log.e(TAG, "playMedia: status[" + Flint.FlintApi.getApplicationStatus(mApiClient) + "]currentAppId[" + currentAppId + "]mediaAppId[" + mediaAppId + "]");
+                
+                // WA: Here we must return launch session quickly because this session will be used to quit application.
+                // those will be set again when application real connected!
+                currentAppId = APPLICATION_URL;
+
+                LaunchSession launchSession = LaunchSession
+                        .launchSessionForAppId(currentAppId);
+                launchSession.setSessionType(LaunchSessionType.WebApp);
+                launchSession.setService(FlintService.this);
+
+                FlintWebAppSession webAppSession = new FlintWebAppSession(
+                        launchSession, FlintService.this);
+                webAppSession.setMetadata(null); // will update when application connected!
+                
+                sessions.put(currentAppId, webAppSession); // will be replaced when application connected!
+                
+                Util.postSuccess(
+                        listener,
+                        new MediaLaunchObject(
+                                webAppSession.launchSession,
+                                FlintService.this));
+                // WA:done
+
 //                if (Flint.FlintApi.getApplicationStatus(mApiClient) == null
 //                        || (!mediaAppId.equals(currentAppId)))
               if (!mediaAppId.equals(currentAppId))
@@ -676,6 +749,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
                             @Override
                             public void onResult(Status result) {
                                 Log.e(TAG, "closeMedia!onResult:" + result);
+                                
                                 if (result.isSuccess()) {
                                     Util.postSuccess(listener, result);
                                 } else {
@@ -1081,6 +1155,8 @@ public class FlintService extends DeviceService implements MediaPlayer,
             Log.d("Connect SDK", "Flint.Listener.onApplicationDisconnected: "
                     + statusCode);
 
+            detachMediaPlayer();
+            
             if (currentAppId == null)
                 return;
 
@@ -1196,7 +1272,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
                     "ConnectionCallbacks.onConnected, wasWaitingForReconnect: "
                             + mWaitingForReconnect);
 
-            attachMediaPlayer();
+            //attachMediaPlayer();
 
             if (mWaitingForReconnect) {
                 mWaitingForReconnect = false;
@@ -1266,15 +1342,17 @@ public class FlintService extends DeviceService implements MediaPlayer,
                         .getApplicationMetadata();
                 currentAppId = APPLICATION_URL; // applicationMetadata.getApplicationId();
 
-                LaunchSession launchSession = LaunchSession
-                        .launchSessionForAppId(currentAppId);
-                // launchSession.setAppName(applicationMetadata.getName());
-                // launchSession.setSessionId(result.getSessionId());
-                launchSession.setSessionType(LaunchSessionType.WebApp);
-                launchSession.setService(FlintService.this);
-
-                FlintWebAppSession webAppSession = new FlintWebAppSession(
-                        launchSession, FlintService.this);
+//                LaunchSession launchSession = LaunchSession
+//                        .launchSessionForAppId(currentAppId);
+//                // launchSession.setAppName(applicationMetadata.getName());
+//                // launchSession.setSessionId(result.getSessionId());
+//                launchSession.setSessionType(LaunchSessionType.WebApp);
+//                launchSession.setService(FlintService.this);
+//
+//                FlintWebAppSession webAppSession = new FlintWebAppSession(
+//                        launchSession, FlintService.this);
+                
+                FlintWebAppSession webAppSession = sessions.get(currentAppId);
                 webAppSession.setMetadata(applicationMetadata);
 
                 sessions.put(currentAppId, webAppSession);

@@ -598,7 +598,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
                                             Status status = result
                                                     .getStatus();
                                             
-                                            Log.e(TAG, "mMediaPlayer.load:onResult[" + status);
+                                            Log.e(TAG, "mMediaPlayer.load:directly load onResult[" + status);
                                             
                                             FlintWebAppSession webAppSession = sessions.get(currentAppId);
                                             
@@ -658,7 +658,8 @@ public class FlintService extends DeviceService implements MediaPlayer,
                                                         
                                                         Log.e(TAG, "mMediaPlayer.load:onResult[" + status);
                                                         
-                                                        if (status.isSuccess()) {
+                                                        //if (status.isSuccess()) {
+                                                        if (true) {
                                                             webAppSession.launchSession
                                                                     .setSessionType(LaunchSessionType.Media);
 

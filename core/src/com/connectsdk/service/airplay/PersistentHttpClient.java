@@ -109,7 +109,6 @@ public class PersistentHttpClient {
         }
         bos.flush();
         String headerData=readHeaders(reader);
-
         if (headerData.length() == 0) {     // remote socket maybe closed
             closeSocket();      // force close socket
             initSocket();       // reinitialize socket
@@ -135,7 +134,8 @@ public class PersistentHttpClient {
         }
 
         if(contentLength<0) {
-            throw new IOException("Invalid content length in response header: " + headerData);
+            //throw new IOException("Invalid content length in response header: " + headerData);
+            return new Response(headerData, headers, "", statusCode); // WA FOR SOME TV SETS? NEED MORE CHECK!
         }
         return new Response(headerData, headers, readContent(reader, contentLength).toString(), statusCode);
     }

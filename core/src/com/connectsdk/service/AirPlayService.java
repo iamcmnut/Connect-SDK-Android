@@ -233,6 +233,15 @@ public class AirPlayService extends DeviceService implements MediaPlayer, MediaC
                         } else if (rate == 1) {
                             playState = PlayStateStatus.Playing;
                         }
+                        
+                        // check issues on some TV sets.
+                        int duration = response.getInt("duration");
+                        int position = response.getInt("position");
+                        if (position >= duration && duration > 0) {
+                            playState = PlayStateStatus.Finished;
+                        }
+                        
+                        Log.e("AirPlayService", "playState[" + playState + "]position[" + position + "]duration[" + duration + "]rate[" + rate+"]");
                     }
                     Util.postSuccess(listener, playState);
                 } catch (Exception e) {
@@ -426,7 +435,6 @@ public class AirPlayService extends DeviceService implements MediaPlayer, MediaC
     public void playVideo(final String url, String mimeType, String title,
             String description, String iconSrc, boolean shouldLoop,
             final LaunchListener listener) {
-
         ResponseListener<Object> responseListener = new ResponseListener<Object>() {
 
             @Override

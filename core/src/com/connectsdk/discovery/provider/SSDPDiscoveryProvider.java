@@ -53,7 +53,7 @@ import javax.xml.parsers.ParserConfigurationException;
 public class SSDPDiscoveryProvider implements DiscoveryProvider {
     Context context;
 
-    private final static int RESCAN_INTERVAL = 10000;
+    private final static int RESCAN_INTERVAL = 3000;
     private final static int RESCAN_ATTEMPTS = 6;
     private final static int SSDP_TIMEOUT = RESCAN_INTERVAL * RESCAN_ATTEMPTS;
 

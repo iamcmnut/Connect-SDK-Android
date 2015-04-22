@@ -53,12 +53,12 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
     protected ConcurrentHashMap<String, ServiceDescription> foundServices;
     protected CopyOnWriteArrayList<DiscoveryProviderListener> serviceListeners;
 
-    private final static int RESCAN_INTERVAL = 10000;
-    private final static int RESCAN_ATTEMPTS = 3;
-    private final static int SSDP_TIMEOUT = RESCAN_INTERVAL * RESCAN_ATTEMPTS;
+//    private final static int RESCAN_INTERVAL = 3000;
+//    private final static int RESCAN_ATTEMPTS = 3;
+//    private final static int SSDP_TIMEOUT = RESCAN_INTERVAL * RESCAN_ATTEMPTS;
 
-    private Timer addCallbackTimer;
-    private Timer removeCallbackTimer;
+//    private Timer addCallbackTimer;
+    //private Timer removeCallbackTimer;
 
     boolean isRunning = false;
 
@@ -94,16 +94,20 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
                 return;
             }
         }
+        
+        // only once
+        rescan();
+        
+//        addCallbackTimer = new Timer();
+//        addCallbackTimer.schedule(new TimerTask() {
+//
+//            @Override
+//            public void run() {
+//                sendSearch();
+//            }
+//        }, 100, RESCAN_INTERVAL);
 
-        addCallbackTimer = new Timer();
-        addCallbackTimer.schedule(new TimerTask() {
-
-            @Override
-            public void run() {
-                sendSearch();
-            }
-        }, 100, RESCAN_INTERVAL);
-
+        /*
         removeCallbackTimer = new Timer();
         removeCallbackTimer.schedule(new TimerTask() {
 
@@ -117,56 +121,57 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
                     }
                 });
             }
-        }, 9100, RESCAN_INTERVAL);
+        }, RESCAN_INTERVAL - 900, RESCAN_INTERVAL);
+        */
     }
 
-    private void sendSearch() {
-        List<String> killKeys = new ArrayList<String>();
-
-        long killPoint = new Date().getTime() - SSDP_TIMEOUT;
-
-        for (String key : foundServices.keySet()) {
-            ServiceDescription service = foundServices.get(key);
-            if (service == null || service.getLastDetection() < killPoint) {
-                killKeys.add(key);
-            }
-        }
-
-        for (String key : killKeys) {
-            final ServiceDescription service = foundServices.get(key);
-
-            if (service != null) {
-                Util.runOnUI(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        for (DiscoveryProviderListener listener : serviceListeners) {
-                            listener.onServiceRemoved(FlintDiscoveryProvider.this, service);
-                        }
-                    }
-                });
-            }
-
-            if (foundServices.containsKey(key))
-                foundServices.remove(key);
-        }
-
-        rescan();
-    }
+//    private void sendSearch() {
+//        List<String> killKeys = new ArrayList<String>();
+//
+//        long killPoint = new Date().getTime() - SSDP_TIMEOUT;
+//
+//        for (String key : foundServices.keySet()) {
+//            ServiceDescription service = foundServices.get(key);
+//            if (service == null || service.getLastDetection() < killPoint) {
+//                killKeys.add(key);
+//            }
+//        }
+//
+//        for (String key : killKeys) {
+//            final ServiceDescription service = foundServices.get(key);
+//
+//            if (service != null) {
+//                Util.runOnUI(new Runnable() {
+//
+//                    @Override
+//                    public void run() {
+//                        for (DiscoveryProviderListener listener : serviceListeners) {
+//                            listener.onServiceRemoved(FlintDiscoveryProvider.this, service);
+//                        }
+//                    }
+//                });
+//            }
+//
+//            if (foundServices.containsKey(key))
+//                foundServices.remove(key);
+//        }
+//
+//        //rescan();
+//    }
 
     @Override
     public void stop() {
         isRunning = false;
 
-        if (addCallbackTimer != null) {
-            addCallbackTimer.cancel();
-            addCallbackTimer = null;
-        }
-
-        if (removeCallbackTimer != null) {
-            removeCallbackTimer.cancel();
-            removeCallbackTimer = null;
-        }
+//        if (addCallbackTimer != null) {
+//            addCallbackTimer.cancel();
+//            addCallbackTimer = null;
+//        }
+        
+//        if (removeCallbackTimer != null) {
+//            removeCallbackTimer.cancel();
+//            removeCallbackTimer = null;
+//        }
 
         if (mMediaRouter != null) {
             Util.runOnUI(new Runnable() {
@@ -319,6 +324,26 @@ public class FlintDiscoveryProvider implements DiscoveryProvider {
         @Override
         public void onRouteRemoved(MediaRouter router, RouteInfo route) {
             super.onRouteRemoved(router, route);
+            FlintDevice flintDevice = FlintDevice.getFromBundle(route.getExtras());
+            String key = flintDevice.getDeviceId();
+            
+                final ServiceDescription service = foundServices.get(key);
+
+                if (service != null) {
+                    Util.runOnUI(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            for (DiscoveryProviderListener listener : serviceListeners) {
+                                listener.onServiceRemoved(FlintDiscoveryProvider.this, service);
+                            }
+                        }
+                    });
+                }
+
+                if (foundServices.containsKey(key))
+                    foundServices.remove(key);
+            
         }
 
         @Override

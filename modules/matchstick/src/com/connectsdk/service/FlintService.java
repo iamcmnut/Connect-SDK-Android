@@ -744,6 +744,7 @@ public class FlintService extends DeviceService implements MediaPlayer,
 
             @Override
             public void onConnected() {
+                Log.e(TAG, "ready to stopApplication!");
                 Flint.FlintApi.stopApplication(mApiClient).setResultCallback(
                         new ResultCallback<Status>() {
 
@@ -1313,12 +1314,14 @@ public class FlintService extends DeviceService implements MediaPlayer,
 
                 @Override
                 public void run() {
+                    Log.e(TAG, "listener:" + listener);
                     if (listener != null) {
                         ServiceCommandError error = new ServiceCommandError(
                                 result.getErrorCode(),
                                 "Failed to connect to Matchstick device",
                                 result);
 
+                        Log.e(TAG, "call onConnectionFailure for " + listener);
                         listener.onConnectionFailure(FlintService.this, error);
                     }
                 }

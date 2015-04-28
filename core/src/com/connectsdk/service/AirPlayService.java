@@ -453,6 +453,12 @@ public class AirPlayService extends DeviceService implements MediaPlayer, MediaC
             }
         };
 
+        // return LaunchSession to user ASAP!
+        LaunchSession launchSession = new LaunchSession();
+        launchSession.setService(AirPlayService.this);
+        launchSession.setSessionType(LaunchSessionType.WebApp);
+        Util.postSuccess(listener, new MediaLaunchObject(launchSession, AirPlayService.this));
+        
         String uri = getRequestURL("play");
         HttpEntity entity = null;
 

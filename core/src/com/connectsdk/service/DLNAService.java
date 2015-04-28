@@ -294,6 +294,12 @@ public class DLNAService extends DeviceService implements PlaylistControl, Media
             }
         };
 
+        // return LaunchSession to user ASAP!
+        LaunchSession launchSession = new LaunchSession();
+        launchSession.setService(DLNAService.this);
+        launchSession.setSessionType(LaunchSessionType.WebApp);
+        Util.postSuccess(listener, new MediaLaunchObject(launchSession, DLNAService.this, DLNAService.this));
+        
         String method = "SetAVTransportURI";
         String metadata = getMetadata(url, mMimeType, title, description, iconSrc);
         if (metadata == null) {

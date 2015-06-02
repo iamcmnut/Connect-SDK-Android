@@ -146,10 +146,12 @@ public class AirPlayService extends DeviceService implements MediaPlayer, MediaC
     public void stop(ResponseListener<Object> listener) {
         String uri = getRequestURL("stop");
 
+        Util.postError(listener, ServiceCommandError.getError(500));
+        
         ServiceCommand<ResponseListener<Object>> request = new ServiceCommand<ResponseListener<Object>>(this, uri, null, listener);
         // TODO This is temp fix for issue https://github.com/ConnectSDK/Connect-SDK-Android/issues/66
         request.send();
-        request.send();
+        //request.send();
 //        persistentHttpClient.disconnect();
         stopTimer();
     }
